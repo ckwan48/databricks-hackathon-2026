@@ -160,20 +160,13 @@ def _digits(s):
     d=re.sub(r"\D","",str(s or ""))
     return ("91"+d) if len(d)==10 else d
 def action_links(name, city="", lat=None, lng=None, phone="", body_extra=""):
-    """mailto / Google Maps / WhatsApp — pure links, no backend. The map link is embedded in the message body too. Never raises."""
+    """A single Google Maps directions link — pure link, no backend, nothing to send. Never raises."""
     try:
-        out=[]
         if lat is not None and lng is not None and pd.notna(lat) and pd.notna(lng):
             mapurl=f"https://www.google.com/maps/dir/?api=1&destination={float(lat)},{float(lng)}"
         else:
             mapurl=f"https://www.google.com/maps/search/?api=1&query={quote(str(name)+' '+str(city))}"
-        out.append(f"<a href='{mapurl}' target='_blank'>🗺️ Directions</a>")
-        msg=f"{name} — {city}\n{body_extra}\nGoogle Maps: {mapurl}\n\nShared from facilitiesHelp.io"
-        ph=_digits(phone)
-        if ph:
-            out.append(f"<a href='https://wa.me/{ph}?text={quote(msg)}' target='_blank'>💬 WhatsApp</a>")
-        out.append(f"<a href='mailto:?subject={quote('Facility: '+str(name))}&body={quote(msg)}'>📧 Email</a>")
-        return "<div class='pillrow' style='gap:16px;font-size:.85rem;margin-top:3px'>"+" ".join(out)+"</div>"
+        return f"<div class='pillrow' style='gap:16px;font-size:.85rem;margin-top:3px'><a href='{mapurl}' target='_blank'>🗺️ Directions</a></div>"
     except Exception: return ""
 def tts_html(text, langname):
     t=json.dumps(re.sub(r"[#*`>_\[\]]"," ",str(text))[:1400]); lc=TTS_LANG.get(langname,"en-US")
@@ -1018,17 +1011,6 @@ elif track==T3:
                 with st.expander("Why this verdict — ground truth, evidence, probability & causal DAG"):
                     why_verdict(r, f"ref{need}{i}".replace(" ",""))
                 if st.button("Add to shortlist",key=f"sl{i}"): save_action(user,"shortlist","referral",r["name"],{"need":need,"near":loc,"grade":r["grade"],"km":round(r["dist_km"],1)})
-        try:
-            _rows="\n".join(f"{j+1}. {rr['name']} — {rr['grade']} {_int(rr['confidence']) or 0}/100 — {rr['dist_km']:.0f} km — {rr['address_city']}"+(f" — {rr['phone']}" if _v(rr.get('phone')) else "")+(f"\n   Google Maps: https://www.google.com/maps/dir/?api=1&destination={rr['latitude']},{rr['longitude']}" if _v(rr.get('latitude')) and _v(rr.get('longitude')) else "") for j,rr in df.iterrows())
-            try:
-                _rel=q(f"SELECT B FROM {GOLD}.gold_specialty_cooccur WHERE A='{needq}' ORDER BY p_b_given_a DESC LIMIT 3")
-                _sugg=("\n\nYou may also need: "+", ".join(_rel['B'].tolist())) if not _rel.empty else ""
-            except Exception: _sugg=""
-            _mb=quote(f"{need} near {loc.title()} (within {radius:.0f} km) — facilitiesHelp.io shortlist:\n\n{_rows}{_sugg}\n\nGraded on cited evidence; confidence out of 100. Not medical advice.")
-            st.markdown("<div class='pillrow' style='gap:18px;font-weight:600;font-size:.92rem'>"
-                f"<a href='https://wa.me/?text={_mb}' target='_blank'>📲 Send on WhatsApp</a>"
-                f"<a href='mailto:?subject={quote(need+' options near '+loc.title())}&body={_mb}'>📧 Email this shortlist</a></div>",unsafe_allow_html=True)
-        except Exception: pass
         _m=facmap(df,360)
         if _m is not None: st.plotly_chart(_m,use_container_width=True)
         try:
