@@ -959,7 +959,37 @@ elif track==T2:
 
 # ==================== TRACK 3 · REFERRAL COPILOT ====================
 elif track==T3:
-    need=alpha_pick(speclist(),"t3need","Care need — any of 2,580 specialties")
+    SYMPTOM_MAP=[
+     (r'foot|feet|ankle|knee|hip|\bleg|bone|fracture|joint|spine|\bback\b|shoulder|wrist|elbow|sprain|orthop|arthrit',"Orthopedic Surgery"),
+     (r'tooth|teeth|gum|dental|cavity|molar',"Dentistry"),
+     (r'heart|chest pain|palpitat|cardiac',"Cardiology"),
+     (r'\beye|vision|sight|blurred|cataract|retina',"Ophthalmology"),
+     (r'\bear\b|nose|throat|hearing|sinus|tonsil',"Otolaryngology"),
+     (r'skin|rash|itch|acne|eczema|\bderma',"Dermatology"),
+     (r'stomach|abdomen|abdominal|digest|nausea|liver|gastr|ulcer|acidity',"Gastroenterology"),
+     (r'kidney|renal|dialysis',"Nephrology"),
+     (r'urine|urinary|bladder|prostate|urolog',"Urology"),
+     (r'pregnan|delivery|labou?r|obstetr|menstru|gynae|gyneco',"Gynecology And Obstetrics"),
+     (r'child|baby|infant|paediatr|pediatr|newborn',"Pediatrics"),
+     (r'brain|headache|migraine|seizure|stroke|\bnumb|neuro|nerve',"Neurology"),
+     (r'diabet|sugar|thyroid|hormone|endocrin',"Endocrinology And Diabetes And Metabolism"),
+     (r'lung|breath|cough|asthma|pneumon|respirat',"Pulmonology"),
+     (r'cancer|tumou?r|oncolog|\blump',"Medical Oncology"),
+     (r'depress|anxiety|mental|psychiat|suicid',"Psychiatry"),
+     (r'accident|trauma|emergency|wound|burn|bleed|injur',"Emergency Medicine"),
+     (r'fever|infection|\bcold\b|\bflu\b',"Internal Medicine"),
+    ]
+    sx=st.text_input("Describe the problem in plain words — e.g. “left foot hurting”, “chest pain”, “toothache” (optional)","").strip()
+    mapped=None
+    if sx:
+        sl=sx.lower()
+        for pat,spec in SYMPTOM_MAP:
+            if re.search(pat,sl): mapped=spec; break
+    if mapped:
+        st.success(f"🩺 We mapped “{sx}” → the likely specialty **{mapped}** — a transparent reference mapping, **not a medical diagnosis**. For an emergency, contact local services. *(Clear the box above to pick a specialty manually.)*")
+    elif sx:
+        st.info(f"Couldn’t match “{sx}” to a specialty — clear the box to pick one manually, or try a body part / symptom word.")
+    need=mapped or alpha_pick(speclist(),"t3need","Care need — any of 2,580 specialties")
     b,cc=st.columns([2,1]); loc=b.text_input("Near (city, district or place)","Jaipur").strip()
     radius=cc.number_input("Within how many km?",min_value=2,max_value=2000,value=50,step=10,help="Increase to reach facilities in nearby towns and cities.")
     ll=geocode(loc) if loc else None
@@ -990,8 +1020,14 @@ elif track==T3:
                 if st.button("Add to shortlist",key=f"sl{i}"): save_action(user,"shortlist","referral",r["name"],{"need":need,"near":loc,"grade":r["grade"],"km":round(r["dist_km"],1)})
         try:
             _rows="\n".join(f"{j+1}. {rr['name']} — {rr['grade']} {_int(rr['confidence']) or 0}/100 — {rr['dist_km']:.0f} km — {rr['address_city']}"+(f" — {rr['phone']}" if _v(rr.get('phone')) else "")+(f"\n   Google Maps: https://www.google.com/maps/dir/?api=1&destination={rr['latitude']},{rr['longitude']}" if _v(rr.get('latitude')) and _v(rr.get('longitude')) else "") for j,rr in df.iterrows())
-            _mb=quote(f"{need} near {loc.title()} (within {radius:.0f} km) — facilitiesHelp.io shortlist:\n\n{_rows}\n\nGraded on cited evidence; confidence out of 100.")
-            st.markdown(f"<a href='mailto:?subject={quote(need+' options near '+loc.title())}&body={_mb}' style='font-size:.92rem;font-weight:600'>📧 Email this shortlist</a>",unsafe_allow_html=True)
+            try:
+                _rel=q(f"SELECT B FROM {GOLD}.gold_specialty_cooccur WHERE A='{needq}' ORDER BY p_b_given_a DESC LIMIT 3")
+                _sugg=("\n\nYou may also need: "+", ".join(_rel['B'].tolist())) if not _rel.empty else ""
+            except Exception: _sugg=""
+            _mb=quote(f"{need} near {loc.title()} (within {radius:.0f} km) — facilitiesHelp.io shortlist:\n\n{_rows}{_sugg}\n\nGraded on cited evidence; confidence out of 100. Not medical advice.")
+            st.markdown("<div class='pillrow' style='gap:18px;font-weight:600;font-size:.92rem'>"
+                f"<a href='https://wa.me/?text={_mb}' target='_blank'>📲 Send on WhatsApp</a>"
+                f"<a href='mailto:?subject={quote(need+' options near '+loc.title())}&body={_mb}'>📧 Email this shortlist</a></div>",unsafe_allow_html=True)
         except Exception: pass
         _m=facmap(df,360)
         if _m is not None: st.plotly_chart(_m,use_container_width=True)
