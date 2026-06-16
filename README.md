@@ -115,6 +115,28 @@ flowchart TD
     O{{"HONEST DECISION<br/>Trust, Gap, Cause, Referral<br/>evidence + uncertainty, never fabricated"}}:::out
 ```
 
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| **Platform** | Databricks **Free Edition** |
+| **Governance & storage** | Unity Catalog · **Delta Lake** (bronze → silver → gold medallion) |
+| **Compute** | Serverless **SQL Warehouse** |
+| **App** | **Databricks Apps** · Streamlit |
+| **LLM & agents** | **Model Serving — Llama 4 Maverick** (3 agents + grounded copilot + translator) |
+| **Natural language → SQL** | **Databricks AI/BI Genie** |
+| **Persistence** | Delta (`app_user_actions`) · **Lakebase**-ready (Postgres + pgvector) |
+| **Dev tooling** | **Databricks agent skills** (`databricks aitools`) · Databricks CLI |
+| **Language** | Python 3 |
+| **Data & classical ML** | pandas · scikit-learn · statsmodels · causal-learn |
+| **Causal & statistics** | PC structure-learning · OLS + state-FE · Double-ML · propensity-score matching · E-values · GAM · quantile · multilevel · stability selection |
+| **Deep learning** | spatial **Graph Neural Network** (geometric DL) |
+| **Visualization** | Plotly · **inlined d3.js** (interactive, draggable force-directed causal graphs) |
+| **Geospatial** | India-Post geocoding (any district) · haversine distance |
+| **Last-mile UX** | Google Maps · `tel:` call · WhatsApp · `mailto:` share · **multilingual answers** (translate agent) · browser **text-to-speech** |
+
+> Full method walkthrough in [`docs/TECHNIQUES.md`](docs/TECHNIQUES.md); research write-up in [`paper/facilitiesHelp.tex`](paper/facilitiesHelp.tex).
+
 ## Architecture
 
 ```

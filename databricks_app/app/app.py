@@ -7,6 +7,7 @@ Every AI agent (insights / reasoning / simulation / copilot) runs ON-DEMAND via 
 button or chat, so the LLM never blocks the render. Llama 4 Maverick via Model Serving.
 """
 import os, json, re
+from urllib.parse import quote
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
@@ -143,7 +144,8 @@ AGENTS={
  "simulation":("You are the SIMULATION what-if agent for a non-technical reader. In markdown, reason about the scenario outcome and its UNCERTAINTY, grounded in the evidence rubric and our causal findings "
   "(flag causal vs correlational). Explain every number in plain words and say what evidence would change the result. End with a clear bold bottom line."),
  "copilot":("You are the facilitiesHelp.io Copilot (Llama 4 Maverick on Databricks) for a NON-TECHNICAL planner. Answer in clean markdown about facility trust, district care gaps, referrals, data quality, and NFHS causal findings. "
-  "CRITICAL: never fabricate statistics, percentages, rates or example numbers — use ONLY numbers you are explicitly given; if you weren't given data, say so. Whenever you cite a number, explain in plain words what it means. State confidence and distinguish correlation from causation in everyday language. Keep it concise; don't pad with invented illustrations.")}
+  "CRITICAL: never fabricate statistics, percentages, rates or example numbers — use ONLY numbers you are explicitly given; if you weren't given data, say so. Whenever you cite a number, explain in plain words what it means. State confidence and distinguish correlation from causation in everyday language. Keep it concise; don't pad with invented illustrations."),
+ "translate":("You are a precise translator. Translate the user's text into the requested target language, preserving ALL numbers, names, units and meaning EXACTLY. Keep any markdown and bold. Output ONLY the translation — no preamble, no notes.")}
 def run_agent(name, ctx, mx=420):
     try:
         from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
@@ -153,6 +155,29 @@ def run_agent(name, ctx, mx=420):
         c=r.choices[0].message.content
         return c if isinstance(c,str) else " ".join(str(x) for x in c)
     except Exception as e: return f"⚠️ Agent unavailable ({type(e).__name__})."
+TTS_LANG={"English":"en-US","Hindi":"hi-IN","Telugu":"te-IN","Tamil":"ta-IN","Bengali":"bn-IN","Marathi":"mr-IN","Kannada":"kn-IN","Gujarati":"gu-IN","Spanish":"es-ES","French":"fr-FR","Arabic":"ar-SA"}
+def _digits(s):
+    d=re.sub(r"\D","",str(s or ""))
+    return ("91"+d) if len(d)==10 else d
+def action_links(name, city="", lat=None, lng=None, phone="", body_extra=""):
+    """mailto / Google Maps / tel / WhatsApp — pure links, no backend. Never raises."""
+    try:
+        out=[]
+        if lat is not None and lng is not None and pd.notna(lat) and pd.notna(lng):
+            out.append(f"<a href='https://www.google.com/maps/dir/?api=1&destination={float(lat)},{float(lng)}' target='_blank'>🗺️ Directions</a>")
+        else:
+            out.append(f"<a href='https://www.google.com/maps/search/?api=1&query={quote(str(name)+' '+str(city))}' target='_blank'>🗺️ Maps</a>")
+        ph=_digits(phone)
+        if ph:
+            out.append(f"<a href='tel:+{ph}'>📞 Call</a>")
+            out.append(f"<a href='https://wa.me/{ph}' target='_blank'>💬 WhatsApp</a>")
+        out.append(f"<a href='mailto:?subject={quote('Facility: '+str(name))}&body={quote(str(name)+chr(10)+str(city)+chr(10)+str(body_extra)+chr(10)+chr(10)+'Shared from facilitiesHelp.io')}'>📧 Email</a>")
+        return "<div class='pillrow' style='gap:16px;font-size:.85rem;margin-top:3px'>"+" ".join(out)+"</div>"
+    except Exception: return ""
+def tts_html(text, langname):
+    t=json.dumps(re.sub(r"[#*`>_\[\]]"," ",str(text))[:1400]); lc=TTS_LANG.get(langname,"en-US")
+    return ("<button onclick=\"(function(){try{var u=new SpeechSynthesisUtterance("+t+");u.lang='"+lc+"';u.rate=1;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}catch(e){}})()\" "
+            "style='font:600 13px IBM Plex Sans,sans-serif;background:#0E2A30;color:#fff;border:none;border-radius:9px;padding:7px 14px;cursor:pointer'>🔊 Listen</button>")
 def ai_button(key, agent, ctx, label="Explain with the AI agent", kind="info"):
     if st.button(f"🧠 {label}", key="b_"+key):
         with st.spinner("Agent reasoning…"): st.session_state["ai_"+key]=run_agent(agent, ctx)
@@ -952,9 +977,15 @@ elif track==T3:
                 if _v(r.get('full_address')): meta.append(f"📍 {str(r['full_address'])[:70]}")
                 if meta: st.markdown("<div class='pillrow'>"+"".join(f"<span class='pill'>{m}</span>" for m in meta)+"</div>",unsafe_allow_html=True)
                 st.markdown(f"<div class='evid'>📄 {clean_ev(r['evidence_citation'])}</div>",unsafe_allow_html=True)
+                st.markdown(action_links(r['name'], r.get('address_city',''), r.get('latitude'), r.get('longitude'), r.get('phone'), f"{r['grade']} · {r['confidence']}/100 · {r['dist_km']:.0f} km from {loc.title()}"),unsafe_allow_html=True)
                 with st.expander("Why this verdict — ground truth, evidence, probability & causal DAG"):
                     why_verdict(r, f"ref{need}{i}".replace(" ",""))
                 if st.button("Add to shortlist",key=f"sl{i}"): save_action(user,"shortlist","referral",r["name"],{"need":need,"near":loc,"grade":r["grade"],"km":round(r["dist_km"],1)})
+        try:
+            _rows="\n".join(f"{j+1}. {rr['name']} — {rr['grade']} {rr['confidence']}/100 — {rr['dist_km']:.0f} km — {rr['address_city']}"+(f" — {rr['phone']}" if _v(rr.get('phone')) else "") for j,rr in df.iterrows())
+            _mb=quote(f"{need} near {loc.title()} (within {radius:.0f} km) — facilitiesHelp.io shortlist:\n\n{_rows}\n\nGraded on cited evidence; confidence out of 100.")
+            st.markdown(f"<a href='mailto:?subject={quote(need+' options near '+loc.title())}&body={_mb}' style='font-size:.92rem;font-weight:600'>📧 Email this shortlist</a>",unsafe_allow_html=True)
+        except Exception: pass
         _m=facmap(df,360)
         if _m is not None: st.plotly_chart(_m,use_container_width=True)
         try:
@@ -1048,6 +1079,18 @@ elif track==T5:
         with st.container(border=True):
             st.markdown(f"**🧑 {qx}**")
             if ans: st.markdown(ans)
+            if ans:
+                lc1,lc2=st.columns([3,1])
+                tl=lc1.selectbox("🌐 Language",list(TTS_LANG),key=f"tl{idx}",label_visibility="collapsed")
+                disp=ans
+                if tl!="English":
+                    if lc2.button("Translate",key=f"tlb{idx}",use_container_width=True):
+                        with st.spinner(f"Translating to {tl}…"):
+                            st.session_state[f"tr{idx}"]=run_agent("translate",f"Target language: {tl}\n\nText:\n{ans}",750)
+                    if st.session_state.get(f"tr{idx}"):
+                        disp=st.session_state[f"tr{idx}"]; st.markdown(disp)
+                try: components.html(tts_html(disp,tl),height=50)
+                except Exception: pass
             if idx==0: answer_chart(qx)
             if st.button("🧮 Also run this as SQL via Genie",key="gbtn"+str(idx)):
                 with st.spinner("Genie is writing SQL…"):
