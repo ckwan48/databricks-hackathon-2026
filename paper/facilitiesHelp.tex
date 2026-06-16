@@ -246,6 +246,8 @@ overweight $\to$ high blood pressure & $+0.57$ & $+0.29$ & $+0.35$ & $+0.44$ & \
 
 \paragraph{The result that connects to facilities.} The same machinery shows facility \emph{count} is only weakly linked to outcomes after adjustment. Hence ``build more facilities'' is not automatically the fix; the binding lever is often demand-side (schooling, antenatal care). This is precisely the honesty a ``for good'' planning tool owes its user.
 
+\paragraph{Interactive exploration.} The DAGs are explorable in-app through a force-directed causal-graph studio, with \texttt{d3.js} \emph{inlined} into the Databricks App to satisfy its content-security policy (a CDN-loaded library is blocked). Six modules---the full NFHS map, the wealth-confounding fork, the trust evidence$\to$verdict graph, the care-pathway co-occurrence graph, supply-vs-demand, and the maternal/adolescent chain---offer draggable nodes, zoom, and per-edge evidence on hover.
+
 \section{Statistical ML and geometric deep learning}\label{sec:ml}
 Beyond linear adjustment we ran: \textbf{GAM + quantile regression} for nonlinear dose--response and high-burden-district (tail) effects (Fig.~\ref{fig:gam}); \textbf{multilevel/hierarchical} models with empirical-Bayes shrinkage to stabilize small-sample districts; penalized regression with \textbf{stability selection}; and \textbf{geometric deep learning}---a spatial GNN with positional encoding and a Tobler's-Law smoothing penalty---benchmarked against baselines (Fig.~\ref{fig:gnn}). Moran's $I$ is used as a spatial-autocorrelation \emph{diagnostic}, not as proof of a spatial process.
 
@@ -265,6 +267,15 @@ We geocode \emph{any} city/district to a centroid from the $165{,}627$-office In
 \[
 d=6371\cdot\arccos\!\big(\sin\phi_1\sin\phi_2+\cos\phi_1\cos\phi_2\cos(\lambda_2-\lambda_1)\big)\ \text{km}.
 \]
+
+\paragraph{Specialty co-occurrence (``you may also need'').} Beyond the requested specialty $A$, we rank related specialties $B$ by the empirical conditional probability that a facility offering $A$ also offers $B$,
+\[
+P(B\mid A)=\frac{\#\{\text{facilities offering both }A\text{ and }B\}}{\#\{\text{facilities offering }A\}},
+\]
+materialized in \texttt{gold\_specialty\_cooccur} over all facilities (kept where $\#A\ge 20$, $\#\{A,B\}\ge 10$ and $P(B\mid A)\ge 0.15$; $6{,}214$ ordered pairs). For instance $P(\text{Internal Medicine}\mid\text{Cardiology})=0.93$ and $P(\text{Orthopedic Surgery}\mid\text{Cardiology})=0.73$. This is a supply-side \emph{bundling} signal, surfaced as a soft suggestion, not medical advice.
+
+\paragraph{Care pathways: cause $\to$ related needs.} A patient routed to a specialty \emph{because of} a condition often needs care for \emph{co-occurring} conditions. We ground this in district-level correlations among the seven patient-facing NFHS indicators (\texttt{gold\_condition\_corr}, all pairs, $n\approx 705$). For a chosen concern we report sibling conditions within the same clinical cluster --- child nutrition (stunting, wasting, child anaemia), metabolic (overweight, high blood sugar), maternal (ANC4, institutional birth) --- annotated with the measured Pearson $r$. Child stunting travels with child anaemia ($r=+0.33$) and wasting ($r=+0.25$); a stunting referral to a paediatrician/child-nutritionist therefore also flags anaemia screening (paediatrics $+$ pathology) and nutrition care nearby, each labelled a \emph{maybe} with an explicit \textbf{population correlation $\neq$ individual diagnosis} caveat. This is where the causal layer (\S\ref{sec:causal}) meets the referral layer: the correlations are real and shown, the confounders (e.g.\ wealth) are examined separately, and the clinical action is \emph{offered, never asserted}.
+
 Roadmap: 2SFCA accessibility scoring to weight reachable supply within a travel radius.
 
 \section{Honesty, uncertainty, and limitations}
@@ -286,6 +297,8 @@ Table & Purpose\\
 \texttt{gold\_facility\_contact} & address, phone, web, beds, doctors, equipment\\
 \texttt{gold\_all\_gaps},\,\texttt{gold\_*\_district\_gaps} & care-gap classification ($2{,}518$ caps)\\
 \texttt{gold\_referral} & distance-rankable referral index\\
+\texttt{gold\_specialty\_cooccur} & specialty co-occurrence $P(B\mid A)$ ($6{,}214$ pairs)\\
+\texttt{gold\_condition\_corr} & NFHS condition correlations for care pathways\\
 \texttt{gold\_nfhs},\,\texttt{gold\_pin\_state},\,\texttt{gold\_specialty\_counts} & analysis aggregates\\
 \texttt{app\_user\_actions} & persisted overrides/shortlists/scenarios/chats\\
 \bottomrule
