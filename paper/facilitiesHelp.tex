@@ -8,6 +8,7 @@
 \usepackage{float}
 \usepackage[hidelinks]{hyperref}
 \usepackage{enumitem}
+\usepackage{microtype}
 \graphicspath{{figures/}{../figures/}}
 % Robust include: renders figures/ or ../figures/ if present, else a labeled placeholder,
 % so this compiles on Overleaf even before you upload the figures/ folder.
@@ -32,6 +33,9 @@
 \noindent A planner handed $10{,}088$ scraped Indian healthcare-facility records faces a trust problem: capability claims are unverified, key fields are sparse, and some values are impossible. We present \textbf{facilitiesHelp.io}, a Databricks App that treats every field as a \emph{claim to verify, not a fact}. We (i) grade every specialty a facility lists ($2{,}580$ distinct; $117{,}993$ graded claims) on evidence drawn from the facility's own text, attaching a calibrated $0\text{--}100$ confidence; (ii) validate that the grade reflects \emph{cited evidence rather than facility prominence} (a model predicting the grade from facility metadata alone achieves AUC $\approx 0.57$, near chance); (iii) classify district-level care gaps for $2{,}518$ capabilities, separating a \emph{real} gap from a \emph{data-poor} region; and (iv) build a causal layer on $706$ NFHS-5 districts that distinguishes real levers from coincidences. Our headline causal result: the sanitation--stunting association ($r=-0.51$) \emph{collapses to $\approx 0$ after adjusting for household wealth}, while female-schooling$\to$child-marriage ($r=-0.65$) and antenatal-care$\to$institutional-birth ($r=+0.60$) survive. Crucially, facility \emph{count} is only weakly linked to outcomes after adjustment, which reframes the supply--demand question for planners. Every claim cites its source text; uncertainty is communicated, never hidden.
 \end{abstract}
 
+\smallskip
+\noindent\textbf{Keywords:} healthcare facility data; trust and evidence grading; uncertainty quantification; medical deserts; supply--demand; causal inference; confounding; propensity scores; geometric deep learning; spatial accessibility; Databricks.
+
 \section{Introduction}
 The challenge dataset contains $10{,}088$ Indian healthcare facilities described by $51$ columns: structured fields (name, location, controlled specialties) plus \emph{uneven free-text} descriptions of claimed capabilities, procedures, equipment, and services. Field coverage is highly non-uniform (Table~\ref{tab:coverage}), the free text is noisy and repetitive, and some structured values are impossible. The user---a non-technical planner, NGO coordinator, or analyst---must nonetheless make decisions they can trust: \emph{Can this facility do what it claims? Where are the real care gaps? Where should a patient go? What must be fixed before the data is trustworthy?}
 
@@ -48,7 +52,7 @@ We use three read-only Unity Catalog datasets:
 \begin{itemize}[leftmargin=1.4em,itemsep=1pt]
 \item \textbf{facilities} --- $10{,}088$ rows $\times\,51$ columns; the core, treated as claims to verify.
 \item \textbf{india\_post\_pincode\_directory} --- $165{,}627$ post offices with district, state, latitude, longitude; powers geocoding and the facility$\to$district join.
-\item \textbf{nfhs\_5\_district\_health\_indicators} --- $706$ districts $\times\,109$ indicators; powers the causal layer.
+\item \textbf{nfhs\_5\_district\_health\_indicators}~\cite{nfhs5} --- $706$ districts $\times\,109$ indicators; powers the causal layer.
 \end{itemize}
 
 \paragraph{Coverage and missingness.} Substantive (non-empty content) coverage of the evidence fields is uneven (Table~\ref{tab:coverage}); $9{,}996/10{,}088$ records carry a postcode. We treat missingness honestly: sparse fields are shown as \emph{``not reported,''} never imputed, and the confidence of a claim reflects how much evidence actually exists.
@@ -68,9 +72,7 @@ equipment & 77.0\% & postcode & 99.0\%\\
 \label{tab:coverage}
 \end{table}
 
-\paragraph{Entity resolution.} The same facility is scraped from many sources. We deduplicate to one canonical record per pre-computed match key \texttt{cluster\_id} via
-$\texttt{row\_number() OVER (PARTITION BY cluster\_id ORDER BY unique\_id)}$,
-collapsing $10{,}088$ raw rows to $9{,}959$ facilities. A medallion pipeline (bronze$\to$silver$\to$gold) on a serverless SQL Warehouse then assembles the evidence text, counts independent source types, and joins facilities$\to$PIN$\to$district.
+\paragraph{Entity resolution.} The same facility is scraped from many sources. We deduplicate to one canonical record per pre-computed match key \texttt{cluster\_id} with the window function {\small\ttfamily row\_number() OVER (PARTITION BY cluster\_id ORDER BY unique\_id)}, collapsing $10{,}088$ raw rows to $9{,}959$ facilities. A medallion pipeline (bronze$\to$silver$\to$gold) on a serverless SQL Warehouse then assembles the evidence text, counts independent source types, and joins facilities$\to$PIN$\to$district.
 
 \section{The trust-grading engine}\label{sec:trust}
 For each (facility, capability) we test two evidence signals against the facility's own text and count independent sources:
@@ -127,9 +129,9 @@ Total & $75{,}335$ & $117{,}993$\\
 Two questions: is the grade a faithful function of its evidence, and is it merely a proxy for facility prominence?
 \begin{enumerate}[leftmargin=1.4em,itemsep=1pt]
 \item \textbf{Reproducibility.} A logistic regression $\Pr(\textsf{STRONG})\sim \textsf{spec\_hit}+\textsf{text\_hit}+n_{\text{src}}$ attains $5$-fold ROC-AUC $=1.00$, confirming the grade is a transparent, deterministic function of its evidence (attribution $\approx 49\%$ specialty code, $\approx 51\%$ procedure/equipment text).
-\item \textbf{Non-popularity.} A gradient-boosting classifier predicting \textsf{STRONG} from facility \emph{metadata only} (capacity, doctors, web presence, \#specialties, facility type)---\emph{excluding} the rule inputs---scores only $4$-fold ROC-AUC $=0.57$, barely above chance. Therefore the grade reflects \emph{cited evidence, not size or fame.}
+\item \textbf{Non-popularity.} A gradient-boosting classifier~\cite{friedman2001} predicting \textsf{STRONG} from facility \emph{metadata only} (capacity, doctors, web presence, \#specialties, facility type)---\emph{excluding} the rule inputs---scores only $4$-fold ROC-AUC $=0.57$, barely above chance. Therefore the grade reflects \emph{cited evidence, not size or fame.}
 \end{enumerate}
-We additionally expose a SHAP-style per-claim attribution (Fig.~\ref{fig:fi}) that decomposes each confidence score into its contributing signals.
+We additionally expose a SHAP-style~\cite{lundberg2017} per-claim attribution (Fig.~\ref{fig:fi}) that decomposes each confidence score into its contributing signals.
 
 \begin{figure}[H]\centering
 \figimg{ml_feature_importance}{0.7\textwidth}
@@ -201,11 +203,11 @@ women overweight $\leftrightarrow$ high blood sugar & $+0.62$\\
 
 \paragraph{The causal ladder.} We climb from association to a defensible effect:
 \begin{enumerate}[leftmargin=1.4em,itemsep=1pt]
-\item \textbf{Structure learning} --- the PC algorithm (constraint-based conditional-independence tests) infers a DAG (Fig.~\ref{fig:dag}), identifying which variables to adjust for.
+\item \textbf{Structure learning} --- the PC algorithm~\cite{spirtes2000} (constraint-based conditional-independence tests) infers a DAG (Fig.~\ref{fig:dag}), identifying which variables to adjust for.
 \item \textbf{OLS with state fixed effects} --- $Y=\beta X+\gamma^\top Z+\sum_s \delta_s \mathbb{1}[\text{state}=s]+\varepsilon$; read $\hat\beta$ holding wealth and state constant.
-\item \textbf{Double Machine Learning} --- partial out confounders from both treatment and outcome with ML and regress the residuals (Frisch--Waugh--Lovell) with cross-fitting, robust to nonlinear confounding.
-\item \textbf{Propensity-score matching} --- match high- vs.\ low-$X$ districts on $\hat e(Z)=\Pr(X{=}1\mid Z)$ and compare outcomes.
-\item \textbf{Sensitivity (E-value)} --- the minimum strength an unmeasured confounder would need with both $X$ and $Y$ to nullify the effect; large $=$ robust.
+\item \textbf{Double Machine Learning}~\cite{chernozhukov2018} --- partial out confounders from both treatment and outcome with ML and regress the residuals (Frisch--Waugh--Lovell) with cross-fitting, robust to nonlinear confounding.
+\item \textbf{Propensity-score matching}~\cite{rosenbaum1983} --- match high- vs.\ low-$X$ districts on $\hat e(Z)=\Pr(X{=}1\mid Z)$ and compare outcomes.
+\item \textbf{Sensitivity (E-value)}~\cite{vanderweele2017} --- the minimum strength an unmeasured confounder would need with both $X$ and $Y$ to nullify the effect; large $=$ robust.
 \end{enumerate}
 
 \begin{figure}[H]\centering
@@ -249,7 +251,7 @@ overweight $\to$ high blood pressure & $+0.57$ & $+0.29$ & $+0.35$ & $+0.44$ & \
 \paragraph{Interactive exploration.} The DAGs are explorable in-app through a force-directed causal-graph studio, with \texttt{d3.js} \emph{inlined} into the Databricks App to satisfy its content-security policy (a CDN-loaded library is blocked). Six modules---the full NFHS map, the wealth-confounding fork, the trust evidence$\to$verdict graph, the care-pathway co-occurrence graph, supply-vs-demand, and the maternal/adolescent chain---offer draggable nodes, zoom, and per-edge evidence on hover.
 
 \section{Statistical ML and geometric deep learning}\label{sec:ml}
-Beyond linear adjustment we ran: \textbf{GAM + quantile regression} for nonlinear dose--response and high-burden-district (tail) effects (Fig.~\ref{fig:gam}); \textbf{multilevel/hierarchical} models with empirical-Bayes shrinkage to stabilize small-sample districts; penalized regression with \textbf{stability selection}; and \textbf{geometric deep learning}---a spatial GNN with positional encoding and a Tobler's-Law smoothing penalty---benchmarked against baselines (Fig.~\ref{fig:gnn}). Moran's $I$ is used as a spatial-autocorrelation \emph{diagnostic}, not as proof of a spatial process.
+Beyond linear adjustment we ran: \textbf{GAM + quantile regression}~\cite{hastie1990,koenker1978} for nonlinear dose--response and high-burden-district (tail) effects (Fig.~\ref{fig:gam}); \textbf{multilevel/hierarchical} models~\cite{gelman2007} with empirical-Bayes shrinkage to stabilize small-sample districts; penalized regression with \textbf{stability selection}~\cite{meinshausen2010}; and \textbf{geometric deep learning}~\cite{kipf2017}---a spatial GNN with positional encoding and a Tobler's-Law~\cite{tobler1970} smoothing penalty---benchmarked against baselines (Fig.~\ref{fig:gnn}). Moran's $I$~\cite{moran1950} is used as a spatial-autocorrelation \emph{diagnostic}, not as proof of a spatial process.
 
 \begin{figure}[H]\centering
 \begin{minipage}{0.49\textwidth}\centering
@@ -276,13 +278,31 @@ materialized in \texttt{gold\_specialty\_cooccur} over all facilities (kept wher
 
 \paragraph{Care pathways: cause $\to$ related needs.} A patient routed to a specialty \emph{because of} a condition often needs care for \emph{co-occurring} conditions. We ground this in district-level correlations among the seven patient-facing NFHS indicators (\texttt{gold\_condition\_corr}, all pairs, $n\approx 705$). For a chosen concern we report sibling conditions within the same clinical cluster --- child nutrition (stunting, wasting, child anaemia), metabolic (overweight, high blood sugar), maternal (ANC4, institutional birth) --- annotated with the measured Pearson $r$. Child stunting travels with child anaemia ($r=+0.33$) and wasting ($r=+0.25$); a stunting referral to a paediatrician/child-nutritionist therefore also flags anaemia screening (paediatrics $+$ pathology) and nutrition care nearby, each labelled a \emph{maybe} with an explicit \textbf{population correlation $\neq$ individual diagnosis} caveat. This is where the causal layer (\S\ref{sec:causal}) meets the referral layer: the correlations are real and shown, the confounders (e.g.\ wealth) are examined separately, and the clinical action is \emph{offered, never asserted}.
 
-Roadmap: 2SFCA accessibility scoring to weight reachable supply within a travel radius; and \emph{last-mile} integrations that turn a verdict into an action---open or route to a facility in Google Maps, place a call or WhatsApp message to it, and email a shortlist or referral letter to a colleague---so a trusted recommendation becomes a next step in one tap.
+Roadmap: 2SFCA accessibility scoring~\cite{luo2003} to weight reachable supply within a travel radius; and \emph{last-mile} integrations that turn a verdict into an action---open or route to a facility in Google Maps, place a call or WhatsApp message to it, and email a shortlist or referral letter to a colleague---so a trusted recommendation becomes a next step in one tap.
 
 \section{Honesty, uncertainty, and limitations}
 Every claim cites the facility's own text; confidence is always shown; the assistant refuses to invent numbers, answering only from grounded gold-table data. Limitations: NFHS-5 is \emph{cross-sectional} (one wave), so our adjusted associations are the strongest single-wave causal claim---two waves would enable difference-in-differences. Scraped supply data carries visibility bias. Suppressed NFHS values are MNAR and are flagged, never imputed.
 
 \section{Conclusion}
 facilitiesHelp.io turns $10{,}088$ messy records into decisions a non-technical planner can trust, across all four challenge tracks plus two bonus tracks. The technical core is honesty: grade on cited evidence, communicate uncertainty, separate a real care gap from missing data, and distinguish a correlation from a cause. The hardest part of ``for good'' data work is not prediction---it is telling the user what the data can and cannot support.
+
+\begin{thebibliography}{99}\small
+\bibitem{nfhs5} International Institute for Population Sciences (IIPS) and ICF. \emph{National Family Health Survey (NFHS-5), India, 2019--21}. Mumbai: IIPS, 2021.
+\bibitem{spirtes2000} P.~Spirtes, C.~Glymour, and R.~Scheines. \emph{Causation, Prediction, and Search}, 2nd ed. MIT Press, 2000.
+\bibitem{chernozhukov2018} V.~Chernozhukov, D.~Chetverikov, M.~Demirer, E.~Duflo, C.~Hansen, W.~Newey, and J.~Robins. Double/debiased machine learning for treatment and structural parameters. \emph{The Econometrics Journal}, 21(1):C1--C68, 2018.
+\bibitem{rosenbaum1983} P.~R.~Rosenbaum and D.~B.~Rubin. The central role of the propensity score in observational studies for causal effects. \emph{Biometrika}, 70(1):41--55, 1983.
+\bibitem{vanderweele2017} T.~J.~VanderWeele and P.~Ding. Sensitivity analysis in observational research: introducing the E-value. \emph{Annals of Internal Medicine}, 167(4):268--274, 2017.
+\bibitem{friedman2001} J.~H.~Friedman. Greedy function approximation: a gradient boosting machine. \emph{The Annals of Statistics}, 29(5):1189--1232, 2001.
+\bibitem{lundberg2017} S.~M.~Lundberg and S.-I.~Lee. A unified approach to interpreting model predictions. In \emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2017.
+\bibitem{hastie1990} T.~Hastie and R.~Tibshirani. \emph{Generalized Additive Models}. Chapman \& Hall, 1990.
+\bibitem{koenker1978} R.~Koenker and G.~Bassett. Regression quantiles. \emph{Econometrica}, 46(1):33--50, 1978.
+\bibitem{gelman2007} A.~Gelman and J.~Hill. \emph{Data Analysis Using Regression and Multilevel/Hierarchical Models}. Cambridge University Press, 2007.
+\bibitem{meinshausen2010} N.~Meinshausen and P.~B\"uhlmann. Stability selection. \emph{Journal of the Royal Statistical Society: Series B}, 72(4):417--473, 2010.
+\bibitem{kipf2017} T.~N.~Kipf and M.~Welling. Semi-supervised classification with graph convolutional networks. In \emph{International Conference on Learning Representations (ICLR)}, 2017.
+\bibitem{tobler1970} W.~R.~Tobler. A computer movie simulating urban growth in the Detroit region. \emph{Economic Geography}, 46:234--240, 1970.
+\bibitem{moran1950} P.~A.~P.~Moran. Notes on continuous stochastic phenomena. \emph{Biometrika}, 37(1/2):17--23, 1950.
+\bibitem{luo2003} W.~Luo and F.~Wang. Measures of spatial accessibility to health care in a GIS environment. \emph{Environment and Planning B: Planning and Design}, 30(6):865--884, 2003.
+\end{thebibliography}
 
 \appendix
 \section{Data dictionary (gold tables)}

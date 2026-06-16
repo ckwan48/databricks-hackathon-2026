@@ -45,6 +45,76 @@ Purely from the facility's own record (transparent + auditable):
 
 On **706 NFHS-5 districts**: PC structure-learning → Bayesian network → **multi-method effect estimation (OLS + state FE, Double-ML, propensity matching)** → E-value sensitivity, plus statistical ML (penalized, multilevel, GAM, conformal) and geometric DL (spatial GNN). The honest headline: **sanitation↔stunting (r = −0.51) collapses to ~0 after adjusting for wealth — confounded, not causal**, while female-schooling→child-marriage and ANC4→institutional-birth **survive** adjustment. And **facility count is only weakly linked to outcomes** — so "build more" isn't always the answer.
 
+## The technique stack — how it reasons
+
+Five method families, one honest decision. ([full plain-language guide →](docs/TECHNIQUES.md))
+
+```mermaid
+flowchart TD
+    classDef data fill:#0E2A30,stroke:#0E2A30,color:#ffffff
+    classDef prob fill:#E8F1FB,stroke:#2272B4,color:#0E2A30
+    classDef corr fill:#FBF0E6,stroke:#E0A02A,color:#0E2A30
+    classDef cause fill:#E7F6EF,stroke:#119A6B,color:#0E2A30
+    classDef ml fill:#F1ECFB,stroke:#7A5AF8,color:#0E2A30
+    classDef geo fill:#FDECEA,stroke:#E0594C,color:#0E2A30
+    classDef out fill:#119A6B,stroke:#0E7A52,color:#ffffff
+
+    D[("10,000 facility records<br/>+ 706 NFHS districts<br/>+ 165k post offices")]:::data
+
+    subgraph P ["1 . Probability and Trust — how sure are we?"]
+        direction TB
+        P1["Evidence grading<br/>STRONG / PARTIAL / WEAK"]:::prob
+        P2["Confidence 0-100<br/>more sources = higher"]:::prob
+        P3["Validation<br/>logistic regression, ROC-AUC"]:::prob
+        P4["Attribution<br/>SHAP-style"]:::prob
+    end
+
+    subgraph C ["2 . Correlation — what moves together?"]
+        direction TB
+        C1["Pearson r<br/>-1 to +1"]:::corr
+        C2["Correlation heatmap"]:::corr
+    end
+
+    subgraph K ["3 . Causation — cause or coincidence?"]
+        direction TB
+        K1["PC structure learning<br/>build the DAG"]:::cause
+        K2["OLS + state fixed effects"]:::cause
+        K3["Double Machine Learning"]:::cause
+        K4["Propensity-score matching"]:::cause
+        K5["E-value robustness"]:::cause
+        K1 --> K2 --> K3 --> K4 --> K5
+    end
+
+    subgraph M ["4 . ML and Deep Learning — non-linear and spatial"]
+        direction TB
+        M1["GAM + quantile regression"]:::ml
+        M2["Multilevel / hierarchical"]:::ml
+        M3["Stability selection"]:::ml
+        M4["Spatial Graph Neural Net<br/>geometric deep learning"]:::ml
+    end
+
+    subgraph G ["5 . Geospatial and Referral — where, how far, what else?"]
+        direction TB
+        G1["Geocode any district"]:::geo
+        G2["Haversine distance"]:::geo
+        G3["Co-occurrence P(B given A)<br/>+ care pathways"]:::geo
+    end
+
+    D --> P
+    D --> C
+    D --> K
+    D --> M
+    D --> G
+    C --> K
+
+    P --> O
+    K --> O
+    M --> O
+    G --> O
+
+    O{{"HONEST DECISION<br/>Trust, Gap, Cause, Referral<br/>evidence + uncertainty, never fabricated"}}:::out
+```
+
 ## Architecture
 
 ```
