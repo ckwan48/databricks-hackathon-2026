@@ -160,17 +160,19 @@ def _digits(s):
     d=re.sub(r"\D","",str(s or ""))
     return ("91"+d) if len(d)==10 else d
 def action_links(name, city="", lat=None, lng=None, phone="", body_extra=""):
-    """mailto / Google Maps / tel / WhatsApp — pure links, no backend. Never raises."""
+    """mailto / Google Maps / WhatsApp — pure links, no backend. The map link is embedded in the message body too. Never raises."""
     try:
         out=[]
         if lat is not None and lng is not None and pd.notna(lat) and pd.notna(lng):
-            out.append(f"<a href='https://www.google.com/maps/dir/?api=1&destination={float(lat)},{float(lng)}' target='_blank'>🗺️ Directions</a>")
+            mapurl=f"https://www.google.com/maps/dir/?api=1&destination={float(lat)},{float(lng)}"
         else:
-            out.append(f"<a href='https://www.google.com/maps/search/?api=1&query={quote(str(name)+' '+str(city))}' target='_blank'>🗺️ Maps</a>")
+            mapurl=f"https://www.google.com/maps/search/?api=1&query={quote(str(name)+' '+str(city))}"
+        out.append(f"<a href='{mapurl}' target='_blank'>🗺️ Directions</a>")
+        msg=f"{name} — {city}\n{body_extra}\nGoogle Maps: {mapurl}\n\nShared from facilitiesHelp.io"
         ph=_digits(phone)
         if ph:
-            out.append(f"<a href='https://wa.me/{ph}' target='_blank'>💬 WhatsApp</a>")
-        out.append(f"<a href='mailto:?subject={quote('Facility: '+str(name))}&body={quote(str(name)+chr(10)+str(city)+chr(10)+str(body_extra)+chr(10)+chr(10)+'Shared from facilitiesHelp.io')}'>📧 Email</a>")
+            out.append(f"<a href='https://wa.me/{ph}?text={quote(msg)}' target='_blank'>💬 WhatsApp</a>")
+        out.append(f"<a href='mailto:?subject={quote('Facility: '+str(name))}&body={quote(msg)}'>📧 Email</a>")
         return "<div class='pillrow' style='gap:16px;font-size:.85rem;margin-top:3px'>"+" ".join(out)+"</div>"
     except Exception: return ""
 def tts_html(text, langname):
@@ -987,7 +989,7 @@ elif track==T3:
                     why_verdict(r, f"ref{need}{i}".replace(" ",""))
                 if st.button("Add to shortlist",key=f"sl{i}"): save_action(user,"shortlist","referral",r["name"],{"need":need,"near":loc,"grade":r["grade"],"km":round(r["dist_km"],1)})
         try:
-            _rows="\n".join(f"{j+1}. {rr['name']} — {rr['grade']} {rr['confidence']}/100 — {rr['dist_km']:.0f} km — {rr['address_city']}"+(f" — {rr['phone']}" if _v(rr.get('phone')) else "") for j,rr in df.iterrows())
+            _rows="\n".join(f"{j+1}. {rr['name']} — {rr['grade']} {_int(rr['confidence']) or 0}/100 — {rr['dist_km']:.0f} km — {rr['address_city']}"+(f" — {rr['phone']}" if _v(rr.get('phone')) else "")+(f"\n   Google Maps: https://www.google.com/maps/dir/?api=1&destination={rr['latitude']},{rr['longitude']}" if _v(rr.get('latitude')) and _v(rr.get('longitude')) else "") for j,rr in df.iterrows())
             _mb=quote(f"{need} near {loc.title()} (within {radius:.0f} km) — facilitiesHelp.io shortlist:\n\n{_rows}\n\nGraded on cited evidence; confidence out of 100.")
             st.markdown(f"<a href='mailto:?subject={quote(need+' options near '+loc.title())}&body={_mb}' style='font-size:.92rem;font-weight:600'>📧 Email this shortlist</a>",unsafe_allow_html=True)
         except Exception: pass
@@ -1046,6 +1048,14 @@ elif track==T3:
 
 # ==================== TRACK 4 · DATA READINESS ====================
 elif track==T4:
+    st.markdown("<div class='kick'>Data Readiness — what to fix before you trust the data</div>",unsafe_allow_html=True)
+    st.caption("**Goal:** surface records whose *own structure* contradicts itself, so a planner cleans them before acting on the trust grades and care gaps. Each flag is concrete **evidence** of a likely error; records are ranked by **review leverage** = issue severity × how often the record is referenced.")
+    ISSUE_EVIDENCE={
+     "issue_impossible":("an impossible value (negative/absurd beds or doctors, or out-of-range GPS)","a data-entry or scrape parse error"),
+     "issue_capacity_no_doctors":("beds/capacity recorded but **zero doctors**","column misalignment during scraping, or a stub record"),
+     "issue_clinic_overclaim":("a small clinic/dentist/pharmacy claiming an **acute** capability (ICU, oncology…) with no matching specialty code","an unverified marketing claim in the listing"),
+     "issue_misaligned":("values that look **shifted into the wrong columns**","row/column misalignment in the source scrape"),
+    }
     r=q(f"""SELECT name,address_city,ftype,n_issues,issue_misaligned,issue_clinic_overclaim,issue_capacity_no_doctors,issue_impossible,review_priority
             FROM {GOLD}.gold_data_readiness ORDER BY review_priority DESC LIMIT 100""")
     if mode=="Insights":
@@ -1059,7 +1069,17 @@ elif track==T4:
         st.dataframe(r,use_container_width=True,hide_index=True,height=300)
     else:
         fixn=st.slider("Records reviewed & fixed",0,len(r),min(20,len(r))); st.metric("Remaining flagged",len(r)-fixn,-fixn); st.progress(min(1.0,fixn/max(len(r),1)))
-    pick=st.selectbox("Mark a record reviewed",["—"]+r["name"].tolist()); dec=st.radio("Decision",["valid","needs-fix","drop"],horizontal=True)
+    st.markdown("##### Review a flagged record — see its evidence")
+    pick=st.selectbox("Flagged record",["—"]+r["name"].tolist(),label_visibility="collapsed")
+    if pick!="—":
+        row=r[r["name"]==pick].iloc[0]
+        flags=[k for k in ISSUE_EVIDENCE if bool(row.get(k))]
+        st.markdown(f"**Why _{pick}_ is flagged** — review priority **{_int(row['review_priority']) or 0}**, **{_int(row['n_issues']) or 0}** issue(s) found:")
+        for k in flags:
+            ev,cause=ISSUE_EVIDENCE[k]
+            st.markdown(f"- 🔎 {ev} &nbsp;→&nbsp; *likely root cause:* {cause}")
+        if not flags: st.caption("No structural contradiction recorded for this row.")
+    dec=st.radio("Decision",["valid","needs-fix","drop"],horizontal=True)
     if pick!="—" and st.button("Save review decision"): save_action(user,"review_decision","readiness",pick,{"decision":dec})
 
 # ==================== TRACK 5 · GENIE ====================
