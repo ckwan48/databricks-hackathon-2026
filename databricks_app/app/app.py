@@ -215,11 +215,11 @@ def _int(x):
     try: return int(float(x))
     except Exception: return None
 def badge(g,c):
-    col=GC.get(g,"#9aa3af")
+    col=GC.get(g,"#9aa3af"); ci=_int(c) or 0
     return (f"<span class='chip' style='background:{col}1A;color:{col};border:1px solid {col}55'>"
             f"<span class='gdot' style='background:{col}'></span>{g}</span>"
-            f"<span class='meter'><span class='meter-fill' style='width:{int(c)}%;background:linear-gradient(90deg,{col}bb,{col})'></span></span>"
-            f"<span class='score'>{int(c)}<span class='score-sm'>/100</span></span>")
+            f"<span class='meter'><span class='meter-fill' style='width:{ci}%;background:linear-gradient(90deg,{col}bb,{col})'></span></span>"
+            f"<span class='score'>{ci}<span class='score-sm'>/100</span></span>")
 def clean_ev(s):
     parts=[p.strip() for p in str(s or "").split(" | ") if p.strip()]
     out=[]
@@ -477,7 +477,7 @@ def d3_graph(mod,height=540):
         .replace("__LINKS__",json.dumps(mod["links"])).replace("__KCOL__",json.dumps(KINDC))
         .replace("__H__",str(height)).replace("__LEGEND__",legend))
 def attribution_html(spec_hit,text_hit,n_sources):
-    ns=int(n_sources or 0)
+    ns=_int(n_sources) or 0
     rows=[("Matching specialty code",35 if spec_hit else 0,"#2272B4"),
           ("Procedure / equipment text",20 if text_hit else 0,"#E0A02A"),
           (f"Independent sources (×{ns})",min(40,7*ns),"#119A6B")]
@@ -528,7 +528,7 @@ def conf_gauge(val,title="Resulting confidence"):
 def verdict_dag(rec):
     """A facility-specific decision DAG: which evidence signals drive THIS grade (not population health)."""
     sh=bool(rec.get('spec_hit')); th=bool(rec.get('text_hit')); ns=_int(rec.get('n_sources')) or 0
-    g=rec.get('grade'); cf=int(rec.get('confidence') or 0)
+    g=rec.get('grade'); cf=_int(rec.get('confidence')) or 0
     ev=[("Specialty code",sh,0.06,0.84,"#2272B4"),("Equipment / procedure text",th,0.06,0.5,"#E0A02A"),(f"{ns} independent source(s)",ns>=1,0.06,0.16,"#119A6B")]
     vx,vy=0.9,0.5; fig=go.Figure()
     for lbl,on,x,y,col in ev:
@@ -546,7 +546,7 @@ def verdict_dag(rec):
 def why_verdict(rec, kk, ctx_extra=""):
     """Reusable 'why this grade' block: ground truth + SHAP-style attribution + verbatim evidence + sources,
     then on demand: reasoning text + probability gauge + causal DAG. Used on every facility card."""
-    g=rec.get('grade'); cf=int(rec.get('confidence') or 0)
+    g=rec.get('grade'); cf=_int(rec.get('confidence')) or 0
     sh=bool(rec.get('spec_hit')); th=bool(rec.get('text_hit')); ns=_int(rec.get('n_sources')) or 0
     st.markdown(f"**Verdict: _{g}_ · confidence {cf}/100.** Graded only from the facility's own record — confidence is the probability the claim is genuine, not a guarantee.")
     st.markdown("**Ground truth — the exact signals from the dataset:**")
@@ -569,7 +569,7 @@ def why_verdict(rec, kk, ctx_extra=""):
             disp=" &nbsp;·&nbsp; ".join(chips) if chips else s
         else: disp=s
         st.markdown("<div class='evid'>📄 <b>In the facility's own record:</b> "+disp+"</div>",unsafe_allow_html=True)
-    ns=int(rec.get('n_sources') or 0); stypes=_v(rec.get('source_types')); urls=rank_sources(rec.get('source_urls'),8)
+    ns=_int(rec.get('n_sources')) or 0; stypes=_v(rec.get('source_types')); urls=rank_sources(rec.get('source_urls'),8)
     st.markdown(f"**Where the evidence comes from — {ns} independent source type(s).** A *source* is an independent place this facility's record was found — a public web directory, the facility's own website, or a medical / government registry. More independent sources agreeing → higher confidence.")
     if stypes: st.caption("Source types in the data: "+str(stypes))
     if urls:
@@ -632,6 +632,8 @@ def allcaps():
     except Exception: return caplist()
 def alpha_pick(options,key,label="Capability / specialty"):
     """A–Z letter filter, then a capability dropdown — makes all capabilities reachable."""
+    options=[o for o in (options or []) if o]
+    if not options: st.info("No items available right now — try again in a moment."); return ""
     letters=sorted({o[0].upper() for o in options if o and o[0].isalpha()})
     c1,c2=st.columns([1,5])
     L=c1.selectbox("A–Z",letters,index=(letters.index("M") if "M" in letters else 0),key=key+"L")
@@ -654,7 +656,7 @@ def ground(ql):
         m=re.search(r'(fortis|apollo|aiims|max|manipal|kims|narayana|medanta|sunshine|rainbow|care)', ql)
         if m:
             d=q(f"SELECT name,capability,grade,confidence,evidence_citation FROM {GOLD}.gold_facility_capability_trust WHERE lower(name) LIKE '%{m.group(1)}%' AND grade<>'NO CLAIM' LIMIT 8")
-            ctx+="Facility evidence — "+"; ".join(f"{r['name']} {r['capability']}={r['grade']}({int(r['confidence'])})" for _,r in d.iterrows())+". "
+            ctx+="Facility evidence — "+"; ".join(f"{r['name']} {r['capability']}={r['grade']}({_int(r['confidence']) or 0})" for _,r in d.iterrows())+". "
         m2=re.search(r'\b(?:in|near|at|around|within|from)\s+([a-z][a-z]{2,20})', ql)
         place=m2.group(1) if m2 else None
         if place and place not in ("the","this","that","india","what","real","each","care","need","with","data"):
@@ -830,7 +832,7 @@ if track==T1:
                                 st.plotly_chart(figsp,use_container_width=True,key="sp"+str(gk))
                                 st.caption("Every specialty the facility lists, graded from its own evidence — STRONG = corroborated in free-text + ≥2 sources · PARTIAL = one signal · CLAIMED = listed only.")
         if rows:
-            ai_button("t1ins","insights","Facility search '"+name+"'. Graded capabilities (facility · capability · grade · confidence): "+"; ".join(f"{r['name']} {r['capability']}={r['grade']}({int(r['confidence'])})" for r in rows[:10])+". Summarise which facilities are most trustworthy for which capabilities, and flag any that should be treated with caution and why. Stay strictly about these facilities — do NOT mention population-health statistics such as sanitation, stunting, ANC visits or child marriage.","Summarise trust for these facilities")
+            ai_button("t1ins","insights","Facility search '"+name+"'. Graded capabilities (facility · capability · grade · confidence): "+"; ".join(f"{r['name']} {r['capability']}={r['grade']}({_int(r['confidence']) or 0})" for r in rows[:10])+". Summarise which facilities are most trustworthy for which capabilities, and flag any that should be treated with caution and why. Stay strictly about these facilities — do NOT mention population-health statistics such as sanitation, stunting, ANC visits or child marriage.","Summarise trust for these facilities")
         st.divider(); st.markdown("#### Evidence quality across the dataset")
         d=q(f"SELECT capability,grade,count(*) n FROM {GOLD}.gold_facility_capability_trust WHERE grade IN ('STRONG','PARTIAL','WEAK/SUSPICIOUS') GROUP BY capability,grade")
         order=d.groupby("capability")["n"].sum().sort_values().index.tolist()
@@ -932,7 +934,7 @@ elif track==T2:
         _m=facmap(mp,430)
         if _m is not None: st.plotly_chart(_m,use_container_width=True)
         st.caption("🟢 strong · 🟡 partial · 🔴 suspicious. Empty regions = possible deserts (cross-check 'data-poor').")
-        ai_button("t2ins","insights",f"Capability {cap}: {(g.classification=='APPARENT CARE GAP').sum()} real gaps, {(g.classification=='DATA-POOR').sum()} data-poor, {(g.classification=='EVIDENCED SUPPLY').sum()} evidenced. Worst gaps: "+", ".join(g[g.classification=='APPARENT CARE GAP']['district_n'].head(5))+". "+CAUSAL_CTX,"Brief the planner on these gaps")
+        ai_button("t2ins","insights",f"Capability {cap}: {(g.classification=='APPARENT CARE GAP').sum()} real gaps, {(g.classification=='DATA-POOR').sum()} data-poor, {(g.classification=='EVIDENCED SUPPLY').sum()} evidenced. Worst gaps: "+(", ".join(str(x) for x in g[g.classification=='APPARENT CARE GAP']['district_n'].head(5)) or 'none')+". "+CAUSAL_CTX,"Brief the planner on these gaps")
         st.divider(); st.markdown("#### Will building more facilities actually fix this gap?")
         st.caption("The honest part. Our analysis of **706 NFHS districts** shows **facility count is only weakly linked to health outcomes after adjustment** — so before recommending *“build more”*, a planner should see which levers truly move the outcome. Often it's demand-side (female schooling, antenatal care), not supply.  🟢 likely-causal · 🔴 confounded (vanishes after adjusting for wealth).")
         cc1,cc2=st.columns(2)
@@ -947,7 +949,7 @@ elif track==T2:
         st.caption("Watch a district's classification flip — and read the honest caveat about what facility supply does and does not cause.")
         dg=g[g.classification!="EVIDENCED SUPPLY"]; dist=st.selectbox("District",dg["district_n"].tolist() or g["district_n"].tolist())
         row=g[g.district_n==dist].iloc[0]; addn=st.slider(f"Add STRONG {cap} facilities to {dist}",0,20,3)
-        nf=int(row.n_facilities)+addn; ns=int(row.n_strong)+addn; share=(ns+int(row.n_partial))/nf if nf else 0
+        nf=(_int(row.n_facilities) or 0)+addn; ns=(_int(row.n_strong) or 0)+addn; share=(ns+(_int(row.n_partial) or 0))/nf if nf else 0
         newcls="DATA-POOR" if nf<5 else ("APPARENT CARE GAP" if share<0.2 else "EVIDENCED SUPPLY")
         m1,m2,m3=st.columns(3); m1.metric("Facilities",nf,addn); m2.metric("Strong share",f"{share:.0%}"); m3.metric("Classification",newcls,"→ improved" if newcls=="EVIDENCED SUPPLY" else "")
         ai_button("t2sim","simulation",f"Add {addn} STRONG {cap} facilities to {dist}: classification {row.classification}→{newcls}. {CAUSAL_CTX} Caveat: facility COUNT is only weakly linked to outcomes after adjustment (supply follows demand; scraped data has visibility bias). Advise what this really implies.","Simulation agent: what this really means","warn")
@@ -997,7 +999,7 @@ elif track==T3:
         if not rel.empty:
             st.markdown("<div class='kick'>You may also need</div>",unsafe_allow_html=True)
             st.caption(f"Facilities offering **{need}** in the data very often also offer these — a soft, data-driven suggestion (specialty co-occurrence P(B|A) across facilities, **not medical advice**):")
-            chips="".join(f"<span class='pill'>{r['B']} · {int(r['p_b_given_a']*100)}% also offer it</span>" for _,r in rel.iterrows())
+            chips="".join(f"<span class='pill'>{r['B']} · {_int(r['p_b_given_a']*100) or 0}% also offer it</span>" for _,r in rel.iterrows())
             st.markdown(f"<div class='pillrow'>{chips}</div>",unsafe_allow_html=True)
         # ---- Care pathway: a health concern -> the right specialist + causally-related "maybe" needs ----
         st.divider()
