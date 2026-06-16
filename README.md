@@ -135,7 +135,7 @@ flowchart TD
 | **Geospatial** | India-Post geocoding (any district) · haversine distance |
 | **Last-mile UX** | Google Maps · `tel:` call · WhatsApp · `mailto:` share · **multilingual answers** (translate agent) · browser **text-to-speech** |
 
-> Full method walkthrough in [`docs/TECHNIQUES.md`](docs/TECHNIQUES.md); research write-up in [`paper/facilitiesHelp.tex`](paper/facilitiesHelp.tex).
+> Full method walkthrough in [`docs/TECHNIQUES.md`](docs/TECHNIQUES.md) · how we used each Databricks capability in [`docs/DATABRICKS_USAGE.md`](docs/DATABRICKS_USAGE.md) · research write-up in [`paper/facilitiesHelp.tex`](paper/facilitiesHelp.tex).
 
 ## Architecture
 
