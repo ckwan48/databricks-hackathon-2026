@@ -1,0 +1,37 @@
+## Household Environment & Socioeconomic Conditions (NFHS-5, columns 11–19)
+
+National coverage: all **706 NFHS-5 district rows** (698 distinct districts, 36 states/UTs). All nine indicators in this theme are **percentages (0–100)**. Data quality in this block is exceptionally clean: seven of the nine columns have **zero suppression and zero small-sample flags** (full 706/706 valid). The only exception is pre-primary attendance.
+
+### Data dictionary & summary statistics
+
+| Column name | What it measures (NFHS-5 definition) | Population / denominator | Unit & direction | n_valid (/706) | %suppressed | %small-sample | mean | median | min (district) | max (district) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `hh_electricity_pct` | Households with electricity (any source) | All households | % · higher = better | 706 | 0.0 | 0.0 | 97.0 | 98.7 | 68.4 — Sitapur (UP) | 100.0 — Diu (DNH&DD) |
+| `hh_improved_water_pct` | Households with an improved drinking-water source (piped, tubewell/borehole, protected well/spring, rainwater, bottled, etc.) | All households | % · higher = better | 706 | 0.0 | 0.0 | 93.7 | 97.0 | 41.2 — Hailakandi (Assam) | 100.0 — Dibang Valley (Arun.) |
+| `hh_use_improved_sanitation_pct` | Households using an improved sanitation facility that is not shared | All households | % · higher = better | 706 | 0.0 | 0.0 | 71.9 | 73.8 | 29.2 — Puruliya (WB) | 99.9 — Malappuram (Kerala) |
+| `households_using_clean_fuel_for_cooking_pct` | Households using a clean cooking fuel (LPG/natural gas, electricity, biogas) | All households | % · higher = better | 706 | 0.0 | 0.0 | 54.1 | 50.5 | 8.6 — West Khasi Hills (Megh.) | 99.8 — Shahdara (Delhi) |
+| `households_using_iodized_salt_pct` | Households using adequately iodized salt (≥15 ppm on field test) | All households | % · higher = better | 706 | 0.0 | 0.0 | 95.1 | 97.0 | 47.9 — Koppal (Karnataka) | 100.0 — Papum Pare (Arun.) |
+| `hh_member_covered_health_insurance_pct` | Households with at least one member covered by a health insurance / financing scheme | All households | % · higher = better | 706 | 0.0 | 0.0 | 40.2 | 35.7 | 1.2 — South Andaman (A&N) | 97.8 — Barmer (Rajasthan) |
+| `child_5y_who_attended_pre_primary_school_during_the_school_pct` | Children age 5 who attended pre-primary school during the school year | Children age 5 | % · higher = better | 703 | 0.4 | 22.0 | 12.5 | 9.6 | 0.0 — Srikakulam (AP) | 52.9 — Coimbatore (TN) |
+| `women_age_15_49_who_are_literate_pct` | Women who can read a whole sentence or completed standard 9+ | Women age 15–49 | % · higher = better | 706 | 0.0 | 0.0 | 74.3 | 75.1 | 38.6 — Jhabua (MP) | 99.7 — Kottayam (Kerala) |
+| `women_age_15_49_with_10_or_more_years_of_schooling_pct` | Women who completed 10 or more years of schooling | Women age 15–49 | % · higher = better | 706 | 0.0 | 0.0 | 40.3 | 39.2 | 13.6 — Pakur (Jharkhand) | 88.2 — Mahe (Puducherry) |
+
+Additional spread (IQR / std): electricity Q1 96.4 / Q3 99.5 (std 4.4); improved water 92.0 / 99.3 (std 8.7); sanitation 62.0 / 83.3 (std 14.3); clean fuel 34.0 / 75.2 (std 24.2); iodized salt 93.8 / 98.6 (std 5.5); health insurance 20.2 / 60.0 (std 23.1); pre-primary 4.5 / 17.6 (std 10.2); female literacy 66.8 / 83.7 (std 12.2); women 10+ yrs schooling 29.3 / 49.9 (std 14.2).
+
+### Nuances & caveats
+
+- **Two near-universal "floors" plus water.** Electricity (mean 97.0, median 98.7, std 4.4) and iodized salt (mean 95.1, median 97.0) are saturated nationwide — they discriminate little between districts and behave more as floors than as gradients. Improved water (mean 93.7) is similar. Because the distributions are tightly bunched near 100, the *means understate the spread*: the action is entirely in the small left tail (e.g. Sitapur 68.4 for electricity, Hailakandi 41.2 for water). Treat district rankings on these three with caution — a 2-point gap is mostly noise.
+
+- **Sanitation and clean fuel are the real socioeconomic discriminators.** Sanitation (std 14.3) and especially clean cooking fuel (std 24.2, the highest dispersion in the block) spread the widest. Clean fuel ranges from 8.6% (West Khasi Hills, Meghalaya) to 99.8% (Shahdara, Delhi) — a near-12× gap — and tracks the rural/urban and tribal/non-tribal divide closely. These two are the best within-theme proxies for household wealth and deprivation.
+
+- **"Improved" ≠ safe.** The water and sanitation indicators use the WHO/UNICEF JMP "improved source/facility" classification. Improved sanitation additionally requires the facility to be **not shared** with other households (so it can read *below* SBM/ODF administrative toilet-coverage figures); improved water does **not** test actual water quality (no contamination test), so a high `hh_improved_water_pct` does not guarantee safe drinking water. These are infrastructure-access measures, not water-safety measures.
+
+- **Clean fuel definition is narrow.** It counts only LPG/PNG, electricity, and biogas as "clean," and measures *use*, not mere connection. Households relying on wood, dung, crop residue, charcoal or kerosene all count as *not* using clean fuel — and an Ujjwala connection without sustained use does not count — so the indicator is essentially active LPG penetration across most of rural India.
+
+- **Health insurance has the most counter-intuitive geography.** Mean 40.2 / median 35.7 with enormous spread (1.2% in South Andaman to 97.8% in Barmer, Rajasthan; IQR 20.2→60.0). The maxima are driven by **state-run schemes** (e.g. Rajasthan's Bhamashah/Chiranjeevi, Andhra/Telangana Aarogyasri, Chhattisgarh) rather than by income — so HIGH coverage often appears in *poorer* states with aggressive public schemes, while a richer UT (South Andaman) can sit near zero. "Covered" means at least one household member in any scheme (PMJAY/state/ESI/private), not full-household or comprehensive cover. Do not read this as a wealth proxy; it is a policy/scheme-penetration proxy.
+
+- **Pre-primary attendance is the only fragile column — use with care.** It is the sole indicator here with meaningful data-quality flags: **3 districts suppressed (0.4%)** and **155 districts small-sample (22.0%)** — over a fifth of all districts carry the parenthesised "25–49 unweighted cases" flag. The denominator (children who are *exactly* age 5) is tiny per district, which drives the small-case problem. Values are low overall (mean 12.5, median 9.6) and 0.0% at Srikakulam (AP). Any district-level read, and especially the extremes, should be flagged as small-sample; do not rank districts finely on it.
+
+- **Female literacy vs. 10+ years schooling are different bars.** Literacy (mean 74.3) only requires reading a sentence or 9th-standard completion, so it sits ~34 points above the stricter "10+ years of schooling" indicator (mean 40.3). The two correlate but the schooling measure is far more demanding and spreads wider in the bottom half — Pakur (Jharkhand) bottoms at 13.6% for 10+ years schooling while still much higher on basic literacy. Use the schooling measure, not literacy, when you need a sensitive education-attainment gradient.
+
+- **Small-UT extremes are thin.** Several maxima/minima fall on very small districts/UTs (Diu, Mahe, Dibang Valley, Papum Pare, South Andaman). These have small populations and can hit 100.0 or extreme lows on small denominators; they are accurate within NFHS sampling but are not representative of large-population conditions, so treat single-district "best/worst" labels accordingly.

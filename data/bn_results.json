@@ -1,0 +1,275 @@
+{
+  "n": 693,
+  "method": "discrete hill-climbing BIC (primary) + GES continuous cross-check",
+  "ges_note": "GES (causal-learn) local_score_BIC errored on a cov-shape bug in this build; used PC (constraint-based, Fisher-Z, alpha=0.05) on standardized continuous data as an independent cross-check.",
+  "directed_edges_hc": [
+    [
+      "fem_school10",
+      "sanitation"
+    ],
+    [
+      "pop_under15",
+      "clean_fuel"
+    ],
+    [
+      "clean_fuel",
+      "fem_school10"
+    ],
+    [
+      "pop_under15",
+      "anc4"
+    ],
+    [
+      "inst_birth",
+      "anc4"
+    ],
+    [
+      "sanitation",
+      "diarrhoea"
+    ],
+    [
+      "pop_under15",
+      "stunting"
+    ],
+    [
+      "fem_school10",
+      "stunting"
+    ],
+    [
+      "anc4",
+      "full_imm"
+    ],
+    [
+      "inst_birth",
+      "pop_under15"
+    ],
+    [
+      "sanitation",
+      "anaemia_women"
+    ]
+  ],
+  "ges_directed": [
+    [
+      "sanitation",
+      "diarrhoea"
+    ],
+    [
+      "sanitation",
+      "stunting"
+    ],
+    [
+      "pop_under15",
+      "sanitation"
+    ],
+    [
+      "anaemia_women",
+      "sanitation"
+    ],
+    [
+      "fem_school10",
+      "clean_fuel"
+    ],
+    [
+      "anc4",
+      "clean_fuel"
+    ],
+    [
+      "inst_birth",
+      "clean_fuel"
+    ],
+    [
+      "fem_school10",
+      "stunting"
+    ],
+    [
+      "pop_under15",
+      "fem_school10"
+    ],
+    [
+      "anaemia_women",
+      "fem_school10"
+    ],
+    [
+      "anc4",
+      "inst_birth"
+    ],
+    [
+      "full_imm",
+      "diarrhoea"
+    ],
+    [
+      "anaemia_women",
+      "diarrhoea"
+    ],
+    [
+      "pop_under15",
+      "stunting"
+    ],
+    [
+      "full_imm",
+      "inst_birth"
+    ],
+    [
+      "pop_under15",
+      "inst_birth"
+    ]
+  ],
+  "ges_undirected": [
+    [
+      "sanitation",
+      "fem_school10"
+    ],
+    [
+      "anc4",
+      "full_imm"
+    ],
+    [
+      "anc4",
+      "pop_under15"
+    ]
+  ],
+  "tercile_cuts": {
+    "sanitation": [
+      66.6,
+      79.97
+    ],
+    "clean_fuel": [
+      38.03,
+      67.2
+    ],
+    "fem_school10": [
+      32.57,
+      45.63
+    ],
+    "anc4": [
+      51.27,
+      70.93
+    ],
+    "diarrhoea": [
+      4.4,
+      7.2
+    ],
+    "stunting": [
+      29.37,
+      37.3
+    ],
+    "inst_birth": [
+      87.0,
+      96.0
+    ],
+    "full_imm": [
+      73.27,
+      84.13
+    ],
+    "pop_under15": [
+      23.7,
+      28.2
+    ],
+    "anaemia_women": [
+      52.2,
+      61.27
+    ]
+  },
+  "cpt_see": {
+    "low": {
+      "n": 231,
+      "P_stunt_high": 0.5714
+    },
+    "med": {
+      "n": 231,
+      "P_stunt_high": 0.2814
+    },
+    "high": {
+      "n": 231,
+      "P_stunt_high": 0.1385
+    }
+  },
+  "cpt_do": {
+    "low": {
+      "P_stunt_high": 0.3849,
+      "positivity_coverage": 1.0
+    },
+    "med": {
+      "P_stunt_high": 0.2958,
+      "positivity_coverage": 1.0
+    },
+    "high": {
+      "P_stunt_high": 0.1998,
+      "positivity_coverage": 1.0
+    }
+  },
+  "adjustment_set": [
+    "fem_school10",
+    "pop_under15"
+  ],
+  "crude_diff": 0.4329,
+  "adj_diff": 0.1851,
+  "ci_tests": [
+    {
+      "a": "sanitation",
+      "b": "stunting",
+      "cond": [],
+      "note": "marginal",
+      "pcorr": -0.504,
+      "pval": 0.0
+    },
+    {
+      "a": "sanitation",
+      "b": "stunting",
+      "cond": [
+        "diarrhoea"
+      ],
+      "note": "control mediator diarrhoea",
+      "pcorr": -0.464,
+      "pval": 0.0
+    },
+    {
+      "a": "sanitation",
+      "b": "diarrhoea",
+      "cond": [],
+      "note": "marginal",
+      "pcorr": -0.366,
+      "pval": 0.0
+    },
+    {
+      "a": "fem_school10",
+      "b": "anc4",
+      "cond": [],
+      "note": "marginal",
+      "pcorr": 0.39,
+      "pval": 0.0
+    },
+    {
+      "a": "inst_birth",
+      "b": "full_imm",
+      "cond": [
+        "anc4"
+      ],
+      "note": "given anc4",
+      "pcorr": 0.175,
+      "pval": 3.2662888977963433e-06
+    },
+    {
+      "a": "clean_fuel",
+      "b": "stunting",
+      "cond": [
+        "sanitation",
+        "fem_school10"
+      ],
+      "note": "given sanitation+fem_school10",
+      "pcorr": -0.062,
+      "pval": 0.10418770055800408
+    },
+    {
+      "a": "stunting",
+      "b": "full_imm",
+      "cond": [
+        "fem_school10"
+      ],
+      "note": "given fem_school10",
+      "pcorr": -0.072,
+      "pval": 0.05691665724886619
+    }
+  ],
+  "total_bic": -6857.9
+}

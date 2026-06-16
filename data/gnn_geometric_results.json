@@ -1,0 +1,113 @@
+{
+  "GAT_geo": {
+    "test_r2": 0.2633408308029175,
+    "test_rmse": 6.882890923840245,
+    "spatial": true,
+    "graph": "haversine-kNN(k=8)"
+  },
+  "GraphSAGE_geo": {
+    "test_r2": 0.3505280017852783,
+    "test_rmse": 6.462756932830722,
+    "spatial": true,
+    "graph": "haversine-kNN(k=8)"
+  },
+  "GCN_featureKNN": {
+    "test_r2": 0.33585625886917114,
+    "test_rmse": 6.535346831594213,
+    "spatial": false,
+    "graph": "feature-kNN(k=8)"
+  },
+  "GCN_geo": {
+    "test_r2": 0.24211573600769043,
+    "test_rmse": 6.981344158524605,
+    "spatial": true,
+    "graph": "haversine-kNN(k=8)"
+  },
+  "Ridge": {
+    "test_r2": 0.38536930084228516,
+    "test_rmse": 6.287018361992686,
+    "spatial": false,
+    "graph": "none"
+  },
+  "HistGBR": {
+    "test_r2": 0.19951735069679977,
+    "test_rmse": 7.174862578074881,
+    "spatial": false,
+    "graph": "none"
+  },
+  "_meta": {
+    "n_districts": 569,
+    "k_neighbors": 8,
+    "features": [
+      "sanitation",
+      "clean_fuel",
+      "fem_school10",
+      "literacy",
+      "anc4",
+      "electricity",
+      "women_overweight",
+      "urbanicity",
+      "pop_under15"
+    ],
+    "target": "stunting",
+    "split": {
+      "train": 341,
+      "val": 113,
+      "test": 115
+    },
+    "geo_edges": 5488,
+    "feat_edges": 6154,
+    "seed": 42,
+    "gat_attention_concentration_mean": 0.10775285214185715,
+    "gat_top_attention_edges": [
+      {
+        "from_district": "Sikkim / South District",
+        "to_district": "Sikkim / West District",
+        "attention": 0.2075459063053131,
+        "dist_km": 20.709395871398655
+      },
+      {
+        "from_district": "Sikkim / East District",
+        "to_district": "Sikkim / West District",
+        "attention": 0.20663046836853027,
+        "dist_km": 27.67387314600442
+      },
+      {
+        "from_district": "Sikkim / West District",
+        "to_district": "Sikkim / East District",
+        "attention": 0.20347703993320465,
+        "dist_km": 27.67387314600442
+      },
+      {
+        "from_district": "Sikkim / West District",
+        "to_district": "Sikkim / South District",
+        "attention": 0.20347703993320465,
+        "dist_km": 20.709395871398655
+      },
+      {
+        "from_district": "Sikkim / South District",
+        "to_district": "Sikkim / East District",
+        "attention": 0.1968214362859726,
+        "dist_km": 19.704407594956116
+      },
+      {
+        "from_district": "Sikkim / East District",
+        "to_district": "Sikkim / South District",
+        "attention": 0.19595330953598022,
+        "dist_km": 19.704407594956116
+      }
+    ],
+    "pyg_version": "2.8.0",
+    "best_spatial_test_r2": 0.3505280017852783,
+    "best_nonspatial_test_r2": 0.38536930084228516,
+    "spatial_improves": false,
+    "delta_r2": -0.034841299057006836,
+    "robustness_5seed": {
+      "note": "mean test R2 over seeds [0,1,2,3,4] for best spatial model (GraphSAGE-geo) vs best non-spatial (Ridge); differences are within ~1 sd => not statistically distinguishable at n_test~115",
+      "GraphSAGE_geo_meanR2": 0.468,
+      "GraphSAGE_geo_sd": 0.066,
+      "Ridge_meanR2": 0.422,
+      "Ridge_sd": 0.084
+    }
+  }
+}

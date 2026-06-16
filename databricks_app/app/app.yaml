@@ -1,0 +1,8 @@
+command: ["streamlit", "run", "app.py"]
+env:
+  - name: "DATABRICKS_WAREHOUSE_ID"
+    value: "c5e7e7089978bd43"
+  - name: "GENIE_SPACE_ID"
+    value: "01f16941592d11d898fe40ebe4cee777"
+  - name: "STREAMLIT_BROWSER_GATHER_USAGE_STATS"
+    value: "false"

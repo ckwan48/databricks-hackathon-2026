@@ -1,0 +1,5 @@
+{
+  "status": "NOT_RUN",
+  "reason": "n=706 districts with sparse pincode supply (mean pct_zero_pins=89%) is far below the scale where a GNN over a district/pincode adjacency graph would beat a tuned RF/OLS-FE; risk of overfitting & non-reproducibility. Tabular RF used instead.",
+  "recommendation": "If pursued, build state-block graph with k-NN edges on urbanicity+supply; expect modest gains only with NFHS-4 added as temporal node features."
+}

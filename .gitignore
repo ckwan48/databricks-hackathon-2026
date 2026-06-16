@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+.playwright-mcp/
+
+# Databricks local state + auth (the agent skills live in .claude/skills and ARE committed)
+.databricks/
+.databrickscfg
+
+# Secrets — never commit
+*.env
+.env
+secrets*
+*token*.txt
+
+# Large derived CSVs (regenerate with build_gold.py / build_*.py)
+data/*.csv
+
+# Hackathon rules PDF (not our work product)
+*.docx.pdf

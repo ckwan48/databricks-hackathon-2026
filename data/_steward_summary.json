@@ -1,0 +1,16 @@
+{
+  "N": 10088,
+  "distinct_uid": 10077,
+  "distinct_cluster": 9959,
+  "n_corrupt": 19,
+  "n_out_of_india": 6,
+  "n_swap": 0,
+  "n_cc_mismatch": 10,
+  "n_yr_bad": 13,
+  "n_cap_no_doc": 1188,
+  "n_doc_no_cap": 2301,
+  "n_rows_within_dup": 9849,
+  "total_within_dup": 160768,
+  "n_queue": 9983,
+  "n_contradiction": 3908
+}
