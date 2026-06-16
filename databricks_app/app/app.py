@@ -845,6 +845,14 @@ elif track==T3:
                 if st.button("Add to shortlist",key=f"sl{i}"): save_action(user,"shortlist","referral",r["name"],{"need":need,"near":loc,"grade":r["grade"],"km":round(r["dist_km"],1)})
         _m=facmap(df,360)
         if _m is not None: st.plotly_chart(_m,use_container_width=True)
+        try:
+            rel=q(f"SELECT B,p_b_given_a FROM {GOLD}.gold_specialty_cooccur WHERE A='{needq}' ORDER BY p_b_given_a DESC LIMIT 5")
+        except Exception: rel=pd.DataFrame()
+        if not rel.empty:
+            st.markdown("<div class='kick'>You may also need</div>",unsafe_allow_html=True)
+            st.caption(f"Facilities offering **{need}** in the data very often also offer these — a soft, data-driven suggestion (specialty co-occurrence P(B|A) across facilities, **not medical advice**):")
+            chips="".join(f"<span class='pill'>{r['B']} · {int(r['p_b_given_a']*100)}% also offer it</span>" for _,r in rel.iterrows())
+            st.markdown(f"<div class='pillrow'>{chips}</div>",unsafe_allow_html=True)
     elif loc:
         st.warning(f"Couldn't locate “{loc}”. Try a city or district name — any of India's 700+ districts works (e.g. Guntur, Jaipur, Hyderabad, Kozhikode, Siliguri).")
 

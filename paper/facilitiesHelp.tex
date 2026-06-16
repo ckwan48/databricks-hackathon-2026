@@ -8,7 +8,13 @@
 \usepackage{float}
 \usepackage[hidelinks]{hyperref}
 \usepackage{enumitem}
-\graphicspath{{../figures/}}
+\graphicspath{{figures/}{../figures/}}
+% Robust include: renders figures/ or ../figures/ if present, else a labeled placeholder,
+% so this compiles on Overleaf even before you upload the figures/ folder.
+\newcommand{\figimg}[2]{%
+  \IfFileExists{figures/#1.png}{\includegraphics[width=#2]{figures/#1}}{%
+  \IfFileExists{../figures/#1.png}{\includegraphics[width=#2]{../figures/#1}}{%
+  \fbox{\parbox[c][2.4cm][c]{#2}{\centering\ttfamily\footnotesize [#1.png]\\[2pt]\normalfont\itshape upload the repo's \texttt{figures/} folder to render}}}}}
 \captionsetup{font=small}
 \setlength{\parskip}{4pt}
 \hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
@@ -112,7 +118,7 @@ Total & $75{,}335$ & $117{,}993$\\
 \end{table}
 
 \begin{figure}[H]\centering
-\includegraphics[width=0.78\textwidth]{capability_grades}
+\figimg{capability_grades}{0.78\textwidth}
 \caption{Evidence grades by capability. Maternity is best-evidenced; ICU/NICU are rarest---visibility, not necessarily absence.}
 \label{fig:grades}
 \end{figure}
@@ -126,7 +132,7 @@ Two questions: is the grade a faithful function of its evidence, and is it merel
 We additionally expose a SHAP-style per-claim attribution (Fig.~\ref{fig:fi}) that decomposes each confidence score into its contributing signals.
 
 \begin{figure}[H]\centering
-\includegraphics[width=0.7\textwidth]{ml_feature_importance}
+\figimg{ml_feature_importance}{0.7\textwidth}
 \caption{Feature importance / attribution for the evidence model.}
 \label{fig:fi}
 \end{figure}
@@ -185,7 +191,7 @@ women overweight $\leftrightarrow$ high blood sugar & $+0.62$\\
 \end{table}
 
 \begin{figure}[H]\centering
-\includegraphics[width=0.85\textwidth]{corr_heatmap}
+\figimg{corr_heatmap}{0.85\textwidth}
 \caption{NFHS-5 correlation matrix across $706$ districts (red positive, blue negative).}
 \label{fig:heat}
 \end{figure}
@@ -203,7 +209,7 @@ women overweight $\leftrightarrow$ high blood sugar & $+0.62$\\
 \end{enumerate}
 
 \begin{figure}[H]\centering
-\includegraphics[width=0.62\textwidth]{causal_dag}
+\figimg{causal_dag}{0.62\textwidth}
 \caption{PC-learned causal DAG over NFHS indicators (treatments, mediators, confounders, outcomes).}
 \label{fig:dag}
 \end{figure}
@@ -227,13 +233,13 @@ overweight $\to$ high blood pressure & $+0.57$ & $+0.29$ & $+0.35$ & $+0.44$ & \
 \end{table}
 
 \begin{figure}[H]\centering
-\includegraphics[width=0.83\textwidth]{causal_effects}
+\figimg{causal_effects}{0.83\textwidth}
 \caption{Correlation $\to$ causation across four estimators. Bars collapsing to $0$ were confounded; bars that hold are likely causal.}
 \label{fig:eff}
 \end{figure}
 
 \begin{figure}[H]\centering
-\includegraphics[width=0.83\textwidth]{causal_scatters}
+\figimg{causal_scatters}{0.83\textwidth}
 \caption{Naive vs.\ wealth-adjusted scatters; the apparent sanitation--stunting slope flattens once wealth is accounted for.}
 \label{fig:scatter}
 \end{figure}
@@ -245,11 +251,11 @@ Beyond linear adjustment we ran: \textbf{GAM + quantile regression} for nonlinea
 
 \begin{figure}[H]\centering
 \begin{minipage}{0.49\textwidth}\centering
-\includegraphics[width=\textwidth]{gam_quantile}
+\figimg{gam_quantile}{\textwidth}
 \caption{GAM + quantile regression.}\label{fig:gam}
 \end{minipage}\hfill
 \begin{minipage}{0.49\textwidth}\centering
-\includegraphics[width=\textwidth]{gnn_vs_baseline}
+\figimg{gnn_vs_baseline}{\textwidth}
 \caption{Spatial GNN vs.\ baselines.}\label{fig:gnn}
 \end{minipage}
 \end{figure}
