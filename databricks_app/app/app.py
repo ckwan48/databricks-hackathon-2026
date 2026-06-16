@@ -6,7 +6,7 @@ Reliability-first: the page renders instantly from cached gold-table queries.
 Every AI agent (insights / reasoning / simulation / copilot) runs ON-DEMAND via a
 button or chat, so the LLM never blocks the render. Llama 4 Maverick via Model Serving.
 """
-import os, json, re
+import os, json, re, uuid
 from urllib.parse import quote
 import streamlit as st
 import streamlit.components.v1 as components
@@ -184,9 +184,13 @@ def ai_button(key, agent, ctx, label="Explain with the AI agent", kind="info"):
         (st.success if kind=="success" else st.warning if kind=="warn" else st.info)(st.session_state["ai_"+key])
 def save_action(user, at, track, ent, payload, silent=False):
     p=json.dumps(payload).replace("'","''"); e=str(ent)[:60].replace("'","")
-    with _conn().cursor() as c:
-        c.execute(f"INSERT INTO {GOLD}.app_user_actions (action_id,user_id,action_type,track,entity_id,payload,created_at) VALUES (uuid(),'{user}','{at}','{track}','{e}','{p}',current_timestamp())")
-    if not silent: st.toast("Saved ✓", icon="✅")
+    aid=uuid.uuid4().hex; u=str(user).replace("'","''")[:60]
+    try:
+        with _conn().cursor() as c:
+            c.execute(f"INSERT INTO {GOLD}.app_user_actions (action_id,user_id,action_type,track,entity_id,payload,created_at) SELECT '{aid}','{u}','{at}','{track}','{e}','{p}',current_timestamp()")
+        if not silent: st.toast("Saved ✓", icon="✅")
+    except Exception as ex:
+        if not silent: st.toast(f"Could not save ({type(ex).__name__})", icon="⚠️")
 GENIE_SID=os.getenv("GENIE_SPACE_ID","01f16941592d11d898fe40ebe4cee777")
 def genie_ask(question):
     g=_wc().genie
