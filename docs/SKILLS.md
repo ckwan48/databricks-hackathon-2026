@@ -23,7 +23,7 @@ databricks aitools install --scope project --agents claude-code
 | `databricks-dabs` | Databricks Asset Bundles (IaC for jobs/apps/pipelines) |
 | `databricks-serverless-migration` | Migrate workloads to serverless compute |
 
-## How Virtue Desk used them
+## How facilitiesHelp.io used them
 
 - **`databricks-apps` + `databricks-app-design`** — scaffolding and deploying the Streamlit app (`databricks apps create/deploy`), and the data-access decision (serverless SQL Warehouse analytics reads vs. Lakebase synced tables).
 - **`databricks-model-serving`** — wiring the on-demand agents + Copilot to `databricks-llama-4-maverick`.

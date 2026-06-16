@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏥 Virtue Desk — Trust · Desert · Cause
+# 🏥 facilitiesHelp.io — Trust · Desert · Cause
 
 ### Turn 10,000 messy healthcare-facility records into decisions a planner can *trust* — with evidence, confidence, and cause.
 
@@ -14,7 +14,7 @@
 
 ## Why this exists
 
-A planner, NGO coordinator, or analyst is handed **10,000 scraped, uneven healthcare-facility records**. Half the "capabilities" are unverified claims. Where do you safely send a patient? Where are the *real* care gaps — not just regions we under-measured? You can't act on hope. You need **evidence, honest uncertainty, and the difference between a correlation and a cause.** That is Virtue Desk.
+A planner, NGO coordinator, or analyst is handed **10,000 scraped, uneven healthcare-facility records**. Half the "capabilities" are unverified claims. Where do you safely send a patient? Where are the *real* care gaps — not just regions we under-measured? You can't act on hope. You need **evidence, honest uncertainty, and the difference between a correlation and a cause.** That is facilitiesHelp.io.
 
 Every number in the app is **computed live from the complete dataset — no sampling, no placeholders** — and every claim cites the facility's own text.
 

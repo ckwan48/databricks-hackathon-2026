@@ -1,8 +1,8 @@
-# Virtue Desk — Trust, Desert & Causation Desk
+# facilitiesHelp.io — Trust, Desert & Causation Desk
 **Databricks Apps & Agents for Good 2026 · Live app:** https://virtue-desk-7474648370355072.aws.databricksapps.com
 
 ## Inspiration
-A planner or NGO coordinator is handed **10,000 messy, scraped healthcare-facility records**. Half the "capabilities" are unverified claims. Where do you safely send a patient? Where are the *real* care gaps — not just regions we under-measured? You can't act on hope. You need **evidence, confidence, and cause.** That is Virtue Desk.
+A planner or NGO coordinator is handed **10,000 messy, scraped healthcare-facility records**. Half the "capabilities" are unverified claims. Where do you safely send a patient? Where are the *real* care gaps — not just regions we under-measured? You can't act on hope. You need **evidence, confidence, and cause.** That is facilitiesHelp.io.
 
 ## What it does
 Four tracks for a non-technical planner — **every answer carries its evidence and its uncertainty**:

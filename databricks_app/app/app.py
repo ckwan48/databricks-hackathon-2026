@@ -16,7 +16,7 @@ from databricks import sql
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.core import Config
 
-st.set_page_config(page_title="Virtue Trust & Causation Desk", layout="wide", page_icon="🏥")
+st.set_page_config(page_title="facilitiesHelp.io — Trust, Desert & Causation", layout="wide", page_icon="🏥")
 GOLD="workspace.virtue_gold"; WID=os.getenv("DATABRICKS_WAREHOUSE_ID","c5e7e7089978bd43")
 LLM="databricks-llama-4-maverick"; FIGS=os.path.join(os.path.dirname(__file__),"figures"); cfg=Config()
 GC={"STRONG":"#119A6B","PARTIAL":"#E0A02A","WEAK/SUSPICIOUS":"#E0594C"}
@@ -142,7 +142,7 @@ AGENTS={
   "(3) name confounders, (4) quote the ground-truth evidence you were given. Never overstate weak evidence. End with a bold one-line bottom verdict."),
  "simulation":("You are the SIMULATION what-if agent for a non-technical reader. In markdown, reason about the scenario outcome and its UNCERTAINTY, grounded in the evidence rubric and our causal findings "
   "(flag causal vs correlational). Explain every number in plain words and say what evidence would change the result. End with a clear bold bottom line."),
- "copilot":("You are the Virtue Desk Copilot (Llama 4 Maverick on Databricks) for a NON-TECHNICAL planner. Answer in clean markdown about facility trust, district care gaps, referrals, data quality, and NFHS causal findings. "
+ "copilot":("You are the facilitiesHelp.io Copilot (Llama 4 Maverick on Databricks) for a NON-TECHNICAL planner. Answer in clean markdown about facility trust, district care gaps, referrals, data quality, and NFHS causal findings. "
   "CRITICAL: never fabricate statistics, percentages, rates or example numbers — use ONLY numbers you are explicitly given; if you weren't given data, say so. Whenever you cite a number, explain in plain words what it means. State confidence and distinguish correlation from causation in everyday language. Keep it concise; don't pad with invented illustrations.")}
 def run_agent(name, ctx, mx=420):
     try:
@@ -534,7 +534,7 @@ _GREET=re.compile(r'^(hi+|hey+|hello+|yo|hola|namaste|good (morning|evening|afte
 def answer(qtext):
     qt=(qtext or "").strip()
     if len(qt)<4 or _GREET.match(qt):
-        return ("👋 **Hi — I'm the Virtue Desk Copilot.** I answer from the facility data with cited evidence and honest confidence. Try:\n\n"
+        return ("👋 **Hi — I'm the facilitiesHelp.io Copilot.** I answer from the facility data with cited evidence and honest confidence. Try:\n\n"
                 "- *Does Fortis have oncology, and how strong is the evidence?*\n"
                 "- *Is the NICU care gap real, or just data-poor?*\n"
                 "- *Dialysis near Guntur*\n"
@@ -600,8 +600,8 @@ def example_questions(tk):
 
 # ---------------- SIDEBAR ----------------
 st.sidebar.markdown("""<div style='display:flex;align-items:center;gap:11px;margin:0 0 6px'>
-<div style='width:33px;height:33px;border-radius:9px;background:linear-gradient(150deg,#FF3621,#FF6F52);display:flex;align-items:center;justify-content:center;color:#fff;font-family:IBM Plex Sans;font-weight:700;font-size:18px;box-shadow:0 7px 16px -8px rgba(255,54,33,.9)'>V</div>
-<div><div style='font-family:IBM Plex Sans;font-weight:600;font-size:18px;color:#0E2A30;letter-spacing:-.01em;line-height:1'>Virtue Desk</div>
+<div style='width:33px;height:33px;border-radius:9px;background:linear-gradient(150deg,#FF3621,#FF6F52);display:flex;align-items:center;justify-content:center;color:#fff;font-family:IBM Plex Sans;font-weight:700;font-size:18px;box-shadow:0 7px 16px -8px rgba(255,54,33,.9)'>F</div>
+<div><div style='font-family:IBM Plex Sans;font-weight:600;font-size:15.5px;color:#0E2A30;letter-spacing:-.01em;line-height:1.15'>facilitiesHelp.io</div>
 <div style='font-family:IBM Plex Mono;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#8FA0A4;margin-top:3px'>Trust · Desert · Cause</div></div></div>""", unsafe_allow_html=True)
 st.sidebar.caption("Turn messy facility records into decisions you can trust.")
 track=st.sidebar.radio("Track",[T1,T2,T3,T4,T5,T6])

@@ -1,4 +1,4 @@
-# Methodology — the inner mechanics of Virtue Desk
+# Methodology — the inner mechanics of facilitiesHelp.io
 
 How a pile of 10,000 scraped, uneven facility records becomes a trust grade, a confidence number, and a care-gap classification you can defend.
 

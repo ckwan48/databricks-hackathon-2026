@@ -1,6 +1,6 @@
 # AGENTS.md — Databricks defaults for coding agents
 
-This repo is **Virtue Desk**, a Databricks App for *Apps & Agents for Good 2026*.
+This repo is **facilitiesHelp.io**, a Databricks App for *Apps & Agents for Good 2026*.
 Coding agents (Claude Code / Cursor / Codex) should read this before touching code.
 
 ## Workspace
