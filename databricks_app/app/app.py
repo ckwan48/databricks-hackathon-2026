@@ -169,7 +169,6 @@ def action_links(name, city="", lat=None, lng=None, phone="", body_extra=""):
             out.append(f"<a href='https://www.google.com/maps/search/?api=1&query={quote(str(name)+' '+str(city))}' target='_blank'>🗺️ Maps</a>")
         ph=_digits(phone)
         if ph:
-            out.append(f"<a href='tel:+{ph}'>📞 Call</a>")
             out.append(f"<a href='https://wa.me/{ph}' target='_blank'>💬 WhatsApp</a>")
         out.append(f"<a href='mailto:?subject={quote('Facility: '+str(name))}&body={quote(str(name)+chr(10)+str(city)+chr(10)+str(body_extra)+chr(10)+chr(10)+'Shared from facilitiesHelp.io')}'>📧 Email</a>")
         return "<div class='pillrow' style='gap:16px;font-size:.85rem;margin-top:3px'>"+" ".join(out)+"</div>"
