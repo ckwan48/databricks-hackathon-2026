@@ -853,6 +853,46 @@ elif track==T3:
             st.caption(f"Facilities offering **{need}** in the data very often also offer these — a soft, data-driven suggestion (specialty co-occurrence P(B|A) across facilities, **not medical advice**):")
             chips="".join(f"<span class='pill'>{r['B']} · {int(r['p_b_given_a']*100)}% also offer it</span>" for _,r in rel.iterrows())
             st.markdown(f"<div class='pillrow'>{chips}</div>",unsafe_allow_html=True)
+        # ---- Care pathway: a health concern -> the right specialist + causally-related "maybe" needs ----
+        st.divider()
+        CARE_MAP={
+          "Child stunting (chronic malnutrition)":("stunting",["Pediatrics","Nutrition And Dietetic"],"low height-for-age — a paediatrician + child nutritionist"),
+          "Child wasting (acute malnutrition)":("wasting",["Pediatrics","Nutrition And Dietetic"],"low weight-for-height — paediatric + nutrition care"),
+          "Child anaemia":("child_anaemia",["Pediatrics","Pathology"],"low haemoglobin — paediatric review + blood work"),
+          "Overweight / obesity":("overweight",["Endocrinology And Diabetes And Metabolism","Cardiology"],"high BMI — endocrine + cardiac risk review"),
+          "High blood sugar / diabetes":("high_blood_sugar",["Endocrinology And Diabetes And Metabolism","Internal Medicine"],"raised blood glucose — diabetes care"),
+          "Antenatal / pregnancy care":("anc4",["Gynecology And Obstetrics","Maternal Fetal Medicine Or Perinatology"],"antenatal visits — obstetric care"),
+          "Safe institutional delivery":("inst_birth",["Gynecology And Obstetrics","Neonatology Perinatal Medicine"],"facility delivery + newborn care"),
+        }
+        COND_INFO={"stunting":("child stunting",["Pediatrics","Nutrition And Dietetic"]),"wasting":("child wasting",["Pediatrics","Nutrition And Dietetic"]),"child_anaemia":("child anaemia",["Pediatrics","Pathology"]),"overweight":("overweight / obesity",["Endocrinology And Diabetes And Metabolism"]),"high_blood_sugar":("high blood sugar / diabetes",["Endocrinology And Diabetes And Metabolism"]),"anc4":("low antenatal care",["Gynecology And Obstetrics"]),"inst_birth":("low institutional delivery",["Gynecology And Obstetrics","Neonatology Perinatal Medicine"])}
+        CLUSTERS=[["stunting","wasting","child_anaemia"],["overweight","high_blood_sugar"],["anc4","inst_birth"]]
+        st.markdown("<div class='kick'>Care pathway — start from a health concern</div>",unsafe_allow_html=True)
+        st.caption("Pick a population-health concern. We route it to the right specialist near you — and because these conditions **travel together**, we flag related care as a *maybe* (Pearson correlation across 705 NFHS districts, **not a diagnosis**).")
+        concern=st.selectbox("Health concern",["—"]+list(CARE_MAP),key="t3cp",label_visibility="collapsed")
+        if concern!="—":
+            ckey,csee,cwhy=CARE_MAP[concern]
+            def _near(specs,k=3):
+                sp="','".join(s.replace("'","''") for s in specs)
+                d=q(f"""SELECT name,specialty,grade,confidence,address_city,
+                  (6371*acos(least(1,cos(radians({la}))*cos(radians(latitude))*cos(radians(longitude)-radians({lo}))+sin(radians({la}))*sin(radians(latitude))))) dist_km
+                  FROM {GOLD}.gold_facility_specialty WHERE specialty IN ('{sp}') AND latitude IS NOT NULL AND grade IN ('STRONG','PARTIAL') ORDER BY (grade='STRONG') DESC, dist_km LIMIT 60""")
+                d=d[d.dist_km<=radius]
+                return d.sort_values(["grade","dist_km"],key=lambda s:s.map({"STRONG":0,"PARTIAL":1}).fillna(2) if s.name=="grade" else s).head(k)
+            def _show(d):
+                if d.empty: st.caption(f"· no STRONG/PARTIAL facility within {radius:.0f} km — widen the distance box."); return
+                st.markdown("".join(f"<div class='claimrow' style='font-size:.9rem;margin:2px 0'>{badge(r2['grade'],r2['confidence'])} &nbsp;<b>{r2['name']}</b> · {r2['specialty']} · {r2['dist_km']:.0f} km · {r2['address_city']}</div>" for _,r2 in d.iterrows()),unsafe_allow_html=True)
+            st.markdown(f"**See first — {cwhy}:** {', '.join(csee)}")
+            _show(_near(csee))
+            shown=False
+            for s in [c for cl in CLUSTERS if ckey in cl for c in cl if c!=ckey]:
+                rr=q(f"SELECT r,n FROM {GOLD}.gold_condition_corr WHERE cond_a='{ckey}' AND cond_b='{s}'")
+                if rr.empty or float(rr['r'][0])<0.2: continue
+                if not shown:
+                    st.markdown("<div class='kick' style='margin-top:.7rem'>You may also need — a maybe</div>",unsafe_allow_html=True); shown=True
+                lbl,specs=COND_INFO[s]; rv=float(rr['r'][0]); nv=int(rr['n'][0])
+                st.markdown(f"Because **{concern.split(' (')[0].lower()}** and **{lbl}** travel together across districts (Pearson r = **{rv:.2f}**, n = {nv}), a patient may also benefit from **{', '.join(specs)}**.")
+                _show(_near(specs,2))
+            if shown: st.caption("Population correlation ≠ individual diagnosis — this surfaces conditions that *co-occur* in the data so a clinician can screen for them. Confounders (e.g. household wealth) are examined in Medical Desert ▸ causal layer.")
     elif loc:
         st.warning(f"Couldn't locate “{loc}”. Try a city or district name — any of India's 700+ districts works (e.g. Guntur, Jaipur, Hyderabad, Kozhikode, Siliguri).")
 
