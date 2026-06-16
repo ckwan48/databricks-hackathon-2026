@@ -104,6 +104,7 @@ Unity Catalog · serverless SQL Warehouse · Delta medallion · **Model Serving 
 
 | Doc | What's inside |
 |---|---|
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | The system design — source datasets → medallion → gold → app → AI, the request lifecycle, track→data map, and design principles (with diagram). |
 | [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) | The inner mechanics — medallion pipeline, the trust rubric, confidence scoring, entity resolution, and the **cross-validated model that proves the grade isn't a popularity proxy** (metadata-only AUC ≈ 0.57). |
 | [`docs/CAUSAL_INFERENCE.md`](docs/CAUSAL_INFERENCE.md) | **Correlation vs. causation** — the causal ladder (PC → OLS+FE → Double-ML → PSM → E-values), the naive-vs-adjusted effect table, and why facility count is only weakly linked to outcomes. |
 | [`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md) | The 3 source datasets (field coverage) + every gold table. |
