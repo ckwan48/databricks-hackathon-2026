@@ -336,6 +336,118 @@ def causal_plot(cap):
     fig.update_layout(height=430,margin=dict(l=8,r=8,t=12,b=8),plot_bgcolor="#fff",paper_bgcolor="#fff",
         xaxis=dict(visible=False,range=[-0.14,1.14]),yaxis=dict(visible=False,range=[-0.12,1.20]),font=dict(family="IBM Plex Sans"))
     return fig
+# ---- interactive d3 causal-graph studio (d3 INLINED so it renders inside Databricks Apps; force layout ⇒ draggable) ----
+@st.cache_resource
+def _d3src():
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),"d3.v7.min.js"),encoding="utf-8") as f: return f.read()
+KINDC={"causal":"#119A6B","confounded":"#E0594C","confounder":"#9AA6A8","mediator":"#E0A93B","weak":"#C0C7C9","evidence":"#2272B4","cooccur":"#7A5AF8","demand":"#E0732B","protective":"#119A6B"}
+KIND_LBL={"causal":"likely causal (survives adjustment)","confounded":"confounded (vanishes after wealth adj.)","confounder":"common cause (confounder)","mediator":"mediator (on the pathway)","weak":"weak / negligible link","evidence":"evidence → verdict","cooccur":"co-occurs (population correlation)","demand":"demand-side driver","protective":"protective (shrinks the gap)"}
+_RROLE={"outcome":18,"supply":16,"treatment":15,"confounder":14,"mediator":14,"evidence":15,"demand":15}
+def _mod(nodes,links,desc=""):
+    return {"desc":desc,
+      "nodes":[{"id":n,"role":role,"color":_RC.get(role,"#2272B4"),"r":_RROLE.get(role,15)} for n,role in nodes],
+      "links":[{"source":s,"target":t,"kind":k,"label":l,"w":5 if k in ("causal","evidence") else 3,"dash":k in ("confounded","confounder","weak","cooccur")} for s,t,k,l in links]}
+def causal_modules():
+    M={}
+    M["① NFHS health — full correlation-vs-causation map"]=_mod([(n,_NODES[n][2]) for n in _NODES],[(s,d,v,l) for s,d,v,l in _EDGES],
+      "Every NFHS link we tested. Green survives wealth adjustment (likely causal); red collapses (confounded); grey are common causes.")
+    M["② Confounding — the wealth fork (sanitation ↔ stunting)"]=_mod(
+      [("Household wealth","confounder"),("Sanitation","treatment"),("Child stunting","outcome")],
+      [("Household wealth","Sanitation","confounder","Richer districts have better sanitation"),
+       ("Household wealth","Child stunting","confounder","Richer districts have less stunting"),
+       ("Sanitation","Child stunting","confounded","Raw r = -0.51 — collapses to ~0 after adjusting for wealth ⇒ NOT a cause")],
+      "The textbook fork: wealth drives both, creating a strong but spurious sanitation↔stunting link.")
+    M["③ Facility trust — evidence → verdict"]=_mod(
+      [("Specialty code","evidence"),("Equipment / procedure text","evidence"),("2nd independent source","evidence"),
+       ("Grade = STRONG","outcome"),("Confidence 0–100","outcome"),("Contradicts facility type","evidence"),("WEAK / SUSPICIOUS","outcome")],
+      [("Specialty code","Grade = STRONG","evidence","A matching clinical specialty code (+35)"),
+       ("Equipment / procedure text","Grade = STRONG","evidence","Procedure / equipment in the free text (+20)"),
+       ("2nd independent source","Grade = STRONG","evidence","Each extra independent source (up to +40)"),
+       ("Grade = STRONG","Confidence 0–100","causal","More agreeing evidence ⇒ higher confidence"),
+       ("Contradicts facility type","WEAK / SUSPICIOUS","causal","e.g. a tiny clinic claiming ICU ⇒ downgraded")],
+      "How a grade is built — purely from the facility's own record, fully auditable.")
+    M["④ Care pathway — conditions that travel together"]=_mod(
+      [("Child stunting","outcome"),("Child anaemia","outcome"),("Child wasting","outcome"),
+       ("Paediatrics","supply"),("Child nutrition","supply"),("Pathology / labs","supply")],
+      [("Child stunting","Child anaemia","cooccur","Travel together across districts (r = +0.33)"),
+       ("Child stunting","Child wasting","cooccur","Travel together across districts (r = +0.25)"),
+       ("Child stunting","Paediatrics","causal","See a paediatrician"),
+       ("Child stunting","Child nutrition","causal","Nutrition / dietetics counselling"),
+       ("Child anaemia","Pathology / labs","causal","Haemoglobin / blood work"),
+       ("Child anaemia","Paediatrics","causal","Paediatric review")],
+      "Why Referral's 'you may also need' exists: conditions co-occur, so related care is a sensible maybe.")
+    M["⑤ Medical desert — supply vs demand vs outcome"]=_mod(
+      [("Population / demand","demand"),("Facilities / supply","supply"),("Care gap","outcome"),
+       ("Health outcome","outcome"),("Household wealth","confounder")],
+      [("Population / demand","Care gap","demand","More unmet need ⇒ larger gap"),
+       ("Facilities / supply","Care gap","protective","More trusted supply ⇒ smaller gap"),
+       ("Facilities / supply","Health outcome","weak","Facility count only weakly linked to outcomes after adjustment"),
+       ("Household wealth","Health outcome","confounder","Wealth drives outcomes directly"),
+       ("Household wealth","Facilities / supply","confounder","Richer districts attract more facilities")],
+      "The honest planning picture: 'build more' is only weakly linked to outcomes — demand-side levers often matter more.")
+    M["⑥ Maternal & adolescent care chain"]=_mod(
+      [("Female schooling","treatment"),("Child marriage","outcome"),("ANC4 visits","treatment"),
+       ("Institutional birth","outcome"),("Newborn care","supply")],
+      [("Female schooling","Child marriage","causal","Schooling ⇒ less child marriage (-0.65, survives)"),
+       ("Female schooling","ANC4 visits","causal","Schooling ⇒ more antenatal care"),
+       ("ANC4 visits","Institutional birth","causal","ANC4 ⇒ institutional birth (+0.60, survives)"),
+       ("Institutional birth","Newborn care","causal","Facility delivery ⇒ newborn care access")],
+      "Demand-side levers that DO survive adjustment — likely real causes a planner can act on.")
+    return M
+_TPL="""<!DOCTYPE html><html><head><meta charset="utf-8"><script>__D3__</script>
+<style>
+ html,body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;}
+ #wrap{position:relative;height:__H__px;background:linear-gradient(180deg,#fff,#FBFAF6);border:1px solid #E7E2D6;border-radius:16px;overflow:hidden;}
+ .nlab{font:600 12.5px 'IBM Plex Sans',sans-serif;fill:#0E2A30;pointer-events:none;}
+ .vrole{font:600 8px 'IBM Plex Mono',monospace;fill:#90A0A4;pointer-events:none;letter-spacing:.07em;text-transform:uppercase;}
+ #tip{position:absolute;pointer-events:none;background:#0E2A30;color:#fff;border-radius:10px;padding:9px 12px;font:12px/1.5 'IBM Plex Sans',sans-serif;max-width:290px;opacity:0;transition:opacity .12s;box-shadow:0 14px 34px -12px rgba(0,0,0,.55);z-index:9;}
+ .vb{display:inline-block;font:700 9px 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;padding:1px 7px;border-radius:6px;margin-bottom:5px;}
+ #hint{position:absolute;left:13px;bottom:11px;font:500 11px 'IBM Plex Sans',sans-serif;color:#9AA7AB;pointer-events:none;}
+ #leg{padding:10px 4px 2px;}
+</style></head><body>
+<div id="wrap"><div id="tip"></div><div id="hint">drag any node · scroll to zoom · hover a link for the evidence</div></div>
+<div id="leg">__LEGEND__</div>
+<script>
+const NODES=__NODES__, LINKS=__LINKS__, KCOL=__KCOL__;
+const wrap=document.getElementById('wrap'), W=wrap.clientWidth||820, H=__H__;
+const svg=d3.select('#wrap').append('svg').attr('width',W).attr('height',H);
+const root=svg.append('g');
+svg.call(d3.zoom().scaleExtent([0.45,2.6]).on('zoom',ev=>root.attr('transform',ev.transform)));
+const tip=d3.select('#tip');
+const kinds=[...new Set(LINKS.map(l=>l.kind))];
+const defs=svg.append('defs');
+kinds.forEach(k=>defs.append('marker').attr('id','m_'+k).attr('viewBox','0 -5 10 10').attr('refX',23).attr('refY',0).attr('markerWidth',6.5).attr('markerHeight',6.5).attr('orient','auto').append('path').attr('d','M0,-5L10,0L0,5').attr('fill',KCOL[k]));
+function move(ev,html){const p=d3.pointer(ev,wrap);tip.html(html).style('left',(p[0]+15)+'px').style('top',(p[1]+12)+'px').style('opacity',1);}
+const link=root.append('g').selectAll('path').data(LINKS).join('path').attr('fill','none')
+ .attr('stroke',d=>KCOL[d.kind]).attr('stroke-width',d=>d.w).attr('stroke-linecap','round')
+ .attr('stroke-dasharray',d=>d.dash?'7 6':null).attr('marker-end',d=>'url(#m_'+d.kind+')').attr('opacity',.92).style('cursor','pointer')
+ .on('mousemove',function(ev,d){d3.select(this).attr('stroke-width',d.w+2.5);move(ev,'<span class="vb" style="background:'+KCOL[d.kind]+'22;color:'+KCOL[d.kind]+'">'+d.kind+'</span><br>'+d.label);})
+ .on('mouseleave',function(ev,d){d3.select(this).attr('stroke-width',d.w);tip.style('opacity',0);});
+const node=root.append('g').selectAll('g').data(NODES).join('g').style('cursor','grab')
+ .call(d3.drag().on('start',ds).on('drag',dg).on('end',de));
+node.append('circle').attr('r',d=>d.r).attr('fill',d=>d.color).attr('stroke','#fff').attr('stroke-width',2.6)
+ .on('mousemove',(ev,d)=>move(ev,'<b>'+d.id+'</b><br><span style="opacity:.78">role: '+d.role+'</span>'))
+ .on('mouseleave',()=>tip.style('opacity',0));
+node.append('text').attr('class','nlab').attr('text-anchor','middle').attr('y',d=>-d.r-9).text(d=>d.id);
+node.append('text').attr('class','vrole').attr('text-anchor','middle').attr('y',d=>-d.r-22).text(d=>d.role);
+const sim=d3.forceSimulation(NODES)
+ .force('link',d3.forceLink(LINKS).id(d=>d.id).distance(150).strength(.45))
+ .force('charge',d3.forceManyBody().strength(-680))
+ .force('center',d3.forceCenter(W/2,H/2-6))
+ .force('collide',d3.forceCollide().radius(d=>d.r+30)).on('tick',tick);
+function tick(){
+ link.attr('d',d=>{const dx=d.target.x-d.source.x,dy=d.target.y-d.source.y,h=Math.hypot(dx,dy)||1,o=Math.min(38,h*0.13);
+  return 'M'+d.source.x+','+d.source.y+' Q'+((d.source.x+d.target.x)/2-dy/h*o)+','+((d.source.y+d.target.y)/2+dx/h*o)+' '+d.target.x+','+d.target.y;});
+ node.attr('transform',d=>'translate('+d.x+','+d.y+')');}
+function ds(ev,d){if(!ev.active)sim.alphaTarget(.3).restart();d.fx=d.x;d.fy=d.y;}
+function dg(ev,d){d.fx=ev.x;d.fy=ev.y;}
+function de(ev,d){if(!ev.active)sim.alphaTarget(0);d.fx=null;d.fy=null;}
+</script></body></html>"""
+def d3_graph(mod,height=540):
+    legend="".join(f"<span style='display:inline-flex;align-items:center;gap:6px;margin:0 12px 7px 0;font:500 11px IBM Plex Sans,sans-serif;color:#3C4A4E'><span style='width:18px;border-top:3px {'dashed' if k in ('confounded','confounder','weak','cooccur') else 'solid'} {KINDC[k]}'></span>{KIND_LBL[k]}</span>" for k in KINDC if any(l['kind']==k for l in mod['links']))
+    return (_TPL.replace("__D3__",_d3src()).replace("__NODES__",json.dumps(mod["nodes"]))
+        .replace("__LINKS__",json.dumps(mod["links"])).replace("__KCOL__",json.dumps(KINDC))
+        .replace("__H__",str(height)).replace("__LEGEND__",legend))
 def attribution_html(spec_hit,text_hit,n_sources):
     ns=int(n_sources or 0)
     rows=[("Matching specialty code",35 if spec_hit else 0,"#2272B4"),
@@ -1046,10 +1158,19 @@ elif track==T6:
                 st.success(f"**Likely causal.** The link stays strong ({nv:+.2f} → {ols:+.2f}) even after removing confounders — a real effect.")
         info_pop("Each bar is the estimated effect under a different method. **Naive** is the raw correlation. **OLS+state fixed-effects**, **Double-ML** (a machine-learning estimator) and **Matching (PSM)** each remove the influence of confounders like household wealth. If the bars shrink toward 0 as you move right, the original correlation was an illusion; if they hold, the cause is likely real.")
         st.divider()
-        st.markdown("##### Causal DAG — pick an outcome to see only its drivers")
-        oc=st.selectbox("Show causal pathway for",["(all levers)","maternity","NICU","emergency","oncology","cardiology","dialysis"],key="dlcap")
-        st.plotly_chart(causal_plot("" if oc.startswith("(all") else oc),use_container_width=True,key="dl_causal")
-        st.caption("🟢 likely-causal · 🔴 confounded (collapses under wealth adjustment) · grey dashed = common cause. Hover any arrow for the relationship + effect size.")
+        st.markdown("##### 🕸️ Interactive causal-graph studio — drag the nodes, switch modules")
+        _M=causal_modules()
+        msel=st.selectbox("Causal graph module",list(_M),key="dlmod")
+        st.caption(_M[msel]["desc"]+"  ·  **Drag** any node to rearrange · **scroll** to zoom · **hover** a link for the evidence.")
+        try:
+            components.html(d3_graph(_M[msel]),height=660,scrolling=False)
+        except Exception as e:
+            st.warning(f"Interactive view unavailable ({type(e).__name__}); showing the static causal map.")
+            st.plotly_chart(causal_plot(""),use_container_width=True,key="dl_causal_fb")
+        with st.expander("Prefer a static, print-friendly view of the levers?"):
+            oc=st.selectbox("Show causal pathway for",["(all levers)","maternity","NICU","emergency","oncology","cardiology","dialysis"],key="dlcap")
+            st.plotly_chart(causal_plot("" if oc.startswith("(all") else oc),use_container_width=True,key="dl_causal")
+            st.caption("🟢 likely-causal · 🔴 confounded (collapses under wealth adjustment) · grey dashed = common cause. Hover any arrow for the relationship + effect size.")
         with st.expander("📊 Raw experiment plots — statistical ML & geometric deep learning (full size)"):
             for fn,cap2 in [("corr_heatmap.png","Full NFHS correlation heatmap (all indicators)"),("causal_scatters.png","Naive vs wealth-adjusted scatters"),("gam_quantile.png","GAM + quantile regression — non-linear dose-response & tail effects")]:
                 p=os.path.join(FIGS,fn)
