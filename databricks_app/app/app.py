@@ -1164,6 +1164,7 @@ elif track==T5:
             st.markdown(f"**🧑 {qx}**")
             if ans: st.markdown(ans)
             if ans:
+                st.caption("🔊 Listen, or read this answer in another language:")
                 lc1,lc2=st.columns([3,1])
                 tl=lc1.selectbox("🌐 Language",list(TTS_LANG),key=f"tl{idx}",label_visibility="collapsed")
                 disp=ans
