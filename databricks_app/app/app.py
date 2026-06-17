@@ -71,13 +71,15 @@ div[data-testid="stMetricLabel"] p{font-family:var(--mono);font-size:10.5px;lett
 header[data-testid="stHeader"]{background:transparent;}
 /* ---- hero ---- */
 .hero{position:relative;overflow:hidden;border:1px solid #11343c;border-radius:20px;padding:32px 36px 28px;margin:2px 0 18px;color:#EAF0F0;
- background:radial-gradient(680px 300px at 92% -30%,rgba(255,111,82,.30),rgba(255,111,82,0) 70%),linear-gradient(160deg,#0E2A30 0%,#08191D 100%);}
+ background:radial-gradient(680px 300px at 92% -30%,rgba(255,54,33,.34),rgba(255,54,33,0) 70%),linear-gradient(155deg,#1B3139 0%,#0B1B22 100%);}
 .hero::after{content:"";position:absolute;inset:0;opacity:.5;pointer-events:none;
  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:34px 34px;
  -webkit-mask-image:linear-gradient(160deg,#000,transparent 72%);mask-image:linear-gradient(160deg,#000,transparent 72%);}
 .hero>*{position:relative;z-index:1;}
 .hero .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--lava2);font-weight:500;display:flex;align-items:center;gap:10px;}
 .hero .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:#27d796;box-shadow:0 0 0 4px rgba(39,215,150,.18);}
+.hero .eyebrow .dbx{display:inline-flex;align-items:center;gap:7px;color:#fff;font-weight:600;background:rgba(255,54,33,.16);border:1px solid rgba(255,111,82,.45);padding:3px 11px 3px 8px;border-radius:7px;letter-spacing:.12em;}
+.hero .eyebrow .dbxsq{width:11px;height:11px;border-radius:2px;background:linear-gradient(150deg,#FF3621,#FF6F52);box-shadow:0 0 0 2px rgba(255,54,33,.28);}
 .herowrap{display:flex;gap:46px;align-items:stretch;}
 .heroL{flex:1.55;min-width:0;}
 .heroR{flex:.95;border-left:1px solid rgba(255,255,255,.10);padding-left:38px;display:flex;flex-direction:column;justify-content:center;gap:22px;}
@@ -741,6 +743,7 @@ st.sidebar.markdown("""<div style='display:flex;align-items:center;gap:11px;marg
 <div><div style='font-family:IBM Plex Sans;font-weight:600;font-size:15.5px;color:#0E2A30;letter-spacing:-.01em;line-height:1.15'>facilitiesHelp.io</div>
 <div style='font-family:IBM Plex Mono;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#8FA0A4;margin-top:3px'>Trust · Desert · Cause</div></div></div>""", unsafe_allow_html=True)
 st.sidebar.caption("Turn messy facility records into decisions you can trust.")
+st.sidebar.markdown("<div style='display:inline-flex;align-items:center;gap:6px;background:rgba(255,54,33,.10);border:1px solid rgba(255,54,33,.28);border-radius:6px;padding:3px 9px 3px 7px;font-family:IBM Plex Mono;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#C2371F;font-weight:700;margin:1px 0 3px'><span style='width:9px;height:9px;border-radius:2px;background:linear-gradient(150deg,#FF3621,#FF6F52);display:inline-block'></span>Built on Databricks</div>",unsafe_allow_html=True)
 track=st.sidebar.radio("Track",[T1,T2,T3,T4,T5,T6])
 mode=st.sidebar.radio("Mode",["Insights","Simulation"],horizontal=True)
 user=st.sidebar.text_input("Your name (saved work)","planner")
@@ -749,7 +752,7 @@ st.sidebar.caption("Databricks · Unity Catalog · SQL Warehouse · gold medalli
 
 _n,_s,_g=kpis()
 st.markdown(f"""<div class="hero"><div class="herowrap">
-<div class="heroL"><div class="eyebrow"><span class="dot"></span>Virtue Foundation · Apps &amp; Agents for Good 2026 · Live on Databricks Free Edition</div>
+<div class="heroL"><div class="eyebrow"><span class="dot"></span><span class="dbx"><span class="dbxsq"></span>Built on Databricks</span>&nbsp;·&nbsp;Apps &amp; Agents for Good 2026 · Free Edition</div>
 <h1>Decisions you can trust from 10,000 messy facility records</h1>
 <p>Every capability claim is graded from the facility's own words, scored for confidence, and weighed against district need — so a planner acts on evidence, not hope.</p></div>
 <div class="heroR"><div class="kpi"><b>{_n}</b><span>graded claims</span></div><div class="kpi"><b>{_s}</b><span>strong-evidence claims</span></div><div class="kpi"><b>{_g}</b><span>real care gaps</span></div></div>
@@ -953,7 +956,7 @@ elif track==T2:
 # ==================== TRACK 3 · REFERRAL COPILOT ====================
 elif track==T3:
     SYMPTOM_MAP=[
-     (r'foot|feet|ankle|knee|hip|\bleg|bone|fracture|joint|spine|\bback\b|shoulder|wrist|elbow|sprain|orthop|arthrit',"Orthopedic Surgery"),
+     (r'foot|feet|ankle|knee|hip|\bleg|\barm\b|bone|fracture|broke|broken|dislocat|joint|spine|\bback\b|shoulder|wrist|elbow|sprain|orthop|arthrit',"Orthopedic Surgery"),
      (r'tooth|teeth|gum|dental|cavity|molar',"Dentistry"),
      (r'heart|chest pain|palpitat|cardiac',"Cardiology"),
      (r'\beye|vision|sight|blurred|cataract|retina',"Ophthalmology"),
@@ -961,7 +964,7 @@ elif track==T3:
      (r'skin|rash|itch|acne|eczema|\bderma',"Dermatology"),
      (r'stomach|abdomen|abdominal|digest|nausea|liver|gastr|ulcer|acidity',"Gastroenterology"),
      (r'kidney|renal|dialysis',"Nephrology"),
-     (r'urine|urinary|bladder|prostate|urolog',"Urology"),
+     (r'urin|bladder|prostate|urolog',"Urology"),
      (r'pregnan|delivery|labou?r|obstetr|menstru|gynae|gyneco',"Gynecology And Obstetrics"),
      (r'child|baby|infant|paediatr|pediatr|newborn',"Pediatrics"),
      (r'brain|headache|migraine|seizure|stroke|\bnumb|neuro|nerve',"Neurology"),
