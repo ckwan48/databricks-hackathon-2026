@@ -157,6 +157,32 @@ def run_agent(name, ctx, mx=420):
         c=r.choices[0].message.content
         return c if isinstance(c,str) else " ".join(str(x) for x in c)
     except Exception as e: return f"⚠️ Agent unavailable ({type(e).__name__})."
+VISION_SPECS=["Orthopedic Surgery","Cardiology","Dentistry","Ophthalmology","Otolaryngology","Dermatology","Gastroenterology","Nephrology","Urology","Gynecology And Obstetrics","Pediatrics","Neurology","Endocrinology And Diabetes And Metabolism","Pulmonology","Medical Oncology","Psychiatry","Emergency Medicine","Internal Medicine","Radiology","General Surgery"]
+def _vision_call(messages, mx=150):
+    import requests
+    w=_wc(); url=f"{w.config.host.rstrip('/')}/serving-endpoints/{LLM}/invocations"
+    r=requests.post(url, headers={**w.config.authenticate(),"Content-Type":"application/json"},
+        json={"messages":messages,"max_tokens":mx,"temperature":0.1}, timeout=60)
+    r.raise_for_status(); return r.json()["choices"][0]["message"]["content"]
+def vision_read(image_bytes, mime="image/jpeg"):
+    """Llama 4 Maverick (multimodal) reads a photo -> (one-line description, suggested specialty). Never raises."""
+    try:
+        import base64 as _b
+        b64=_b.b64encode(image_bytes).decode()
+        prompt=("A non-technical person uploaded this photo — it may show an injury, a symptom, a prescription, or a clinic/hospital board. "
+                "In ONE short plain sentence say what it shows. Then on a NEW line output exactly 'SPECIALTY: X' where X is the single most relevant from this list: "
+                +", ".join(VISION_SPECS)+". This is NOT a medical diagnosis.")
+        out=_vision_call([{"role":"user","content":[{"type":"text","text":prompt},{"type":"image_url","image_url":{"url":f"data:{mime};base64,{b64}"}}]}])
+        spec=None; desc=out.strip()
+        m=re.search(r'SPECIALTY:\s*(.+)', out)
+        if m:
+            cand=m.group(1).strip().rstrip('.')
+            for s in VISION_SPECS:
+                if s.lower()==cand.lower() or s.lower() in cand.lower() or cand.lower() in s.lower(): spec=s; break
+            desc=out.split("SPECIALTY:")[0].strip()
+        return desc, spec
+    except Exception as e:
+        return f"(couldn't read the image — {type(e).__name__})", None
 TTS_LANG={"English":"en-US","Hindi":"hi-IN","Telugu":"te-IN","Tamil":"ta-IN","Bengali":"bn-IN","Marathi":"mr-IN","Kannada":"kn-IN","Gujarati":"gu-IN","Spanish":"es-ES","French":"fr-FR","Arabic":"ar-SA"}
 def _digits(s):
     d=re.sub(r"\D","",str(s or ""))
@@ -985,6 +1011,18 @@ elif track==T3:
         st.success(f"🩺 We mapped “{sx}” → the likely specialty **{mapped}** — a transparent reference mapping, **not a medical diagnosis**. For an emergency, contact local services. *(Clear the box above to pick a specialty manually.)*")
     elif sx:
         st.info(f"Couldn’t match “{sx}” to a specialty — clear the box to pick one manually, or try a body part / symptom word.")
+    img=st.file_uploader("📷 Or upload a photo — an injury, a prescription, or a clinic board (optional, read by Llama 4 Maverick vision)",type=["jpg","jpeg","png"],key="t3img")
+    if img is not None and not mapped:
+        with st.spinner("Reading the photo with Llama 4 Maverick (vision)…"):
+            _vd,_vs=vision_read(img.getvalue(), getattr(img,'type',None) or "image/jpeg")
+        ci,ct=st.columns([1,2])
+        ci.image(img, use_column_width=True)
+        ct.success(f"🖼️ {_vd}")
+        if _vs:
+            ct.markdown(f"→ Likely specialty: **{_vs}** — *not a medical diagnosis*. Showing trusted facilities below.")
+            mapped=_vs
+        else:
+            ct.caption("Couldn’t map the photo to a specialty — type the problem or pick one below.")
     need=mapped or alpha_pick(speclist(),"t3need","Care need — any of 2,580 specialties")
     b,cc=st.columns([2,1]); loc=b.text_input("Near (city, district or place)","Jaipur").strip()
     radius=cc.number_input("Within how many km?",min_value=2,max_value=2000,value=50,step=10,help="Increase to reach facilities in nearby towns and cities.")
