@@ -278,10 +278,16 @@ materialized in \texttt{gold\_specialty\_cooccur} over all facilities (kept wher
 
 \paragraph{Care pathways: cause $\to$ related needs.} A patient routed to a specialty \emph{because of} a condition often needs care for \emph{co-occurring} conditions. We ground this in district-level correlations among the seven patient-facing NFHS indicators (\texttt{gold\_condition\_corr}, all pairs, $n\approx 705$). For a chosen concern we report sibling conditions within the same clinical cluster --- child nutrition (stunting, wasting, child anaemia), metabolic (overweight, high blood sugar), maternal (ANC4, institutional birth) --- annotated with the measured Pearson $r$. Child stunting travels with child anaemia ($r=+0.33$) and wasting ($r=+0.25$); a stunting referral to a paediatrician/child-nutritionist therefore also flags anaemia screening (paediatrics $+$ pathology) and nutrition care nearby, each labelled a \emph{maybe} with an explicit \textbf{population correlation $\neq$ individual diagnosis} caveat. This is where the causal layer (\S\ref{sec:causal}) meets the referral layer: the correlations are real and shown, the confounders (e.g.\ wealth) are examined separately, and the clinical action is \emph{offered, never asserted}.
 
-Roadmap: 2SFCA accessibility scoring~\cite{luo2003} to weight reachable supply within a travel radius; facility-placement optimization (where to build to maximally shrink the evidenced gaps); and \emph{last-mile} integrations that turn a verdict into an action---open or route to a facility in Google Maps, place a call or WhatsApp message to it, and email a shortlist or referral letter to a colleague---so a trusted recommendation becomes a next step in one tap. Multimodal intake is a natural extension: accept a photo of a facility board, equipment, or signage and extract the claimed capabilities with a vision--language model, then feed the same evidence-grading rubric (today the app supports text and multilingual audio output).
+Roadmap: 2SFCA accessibility scoring~\cite{luo2003} to weight reachable supply within a travel radius; facility-placement optimization (where to build to maximally shrink the evidenced gaps); and \emph{last-mile} integrations that turn a verdict into an action---open or route to a facility in Google Maps, place a call or WhatsApp message to it, and email a shortlist or referral letter to a colleague---so a trusted recommendation becomes a next step in one tap. Multimodal intake is already live: the app accepts a photo---a facility board, a prescription, or the condition itself (an infected eye, a swollen limb)---and routes it to the right specialty using the \emph{same} Llama~4 Maverick Model-Serving endpoint as the text agents. The assistant also answers in eleven languages with text-to-speech.
 
 \section{Honesty, uncertainty, and limitations}
 Every claim cites the facility's own text; confidence is always shown; the assistant refuses to invent numbers, answering only from grounded gold-table data. Limitations: NFHS-5 is \emph{cross-sectional} (one wave), so our adjusted associations are the strongest single-wave causal claim---two waves would enable difference-in-differences. We also cannot run a randomized controlled trial (an A/B test) on districts---one cannot randomly assign sanitation or schooling---so propensity-score matching serves as the \emph{observational analog} of randomized assignment, balancing covariates between ``treated'' and ``control'' districts; a true interventional test would require a field or natural experiment (e.g.\ a staged policy rollout). Scraped supply data carries visibility bias. Suppressed NFHS values are MNAR and are flagged, never imputed.
+
+\section{Future work: temporal causation, forecasting, and connectivity}
+\paragraph{From cross-sectional to temporal causation.} The single largest gain is a \emph{second wave}. Linking NFHS-4 (2015--16) to NFHS-5 (2019--21) at the district level turns our cross-section into a two-period \emph{panel}, enabling: (i) \textbf{difference-in-differences}---comparing the \emph{change} in outcomes where a lever (sanitation, schooling) rose against districts where it did not, which differences out time-invariant district confounders; (ii) \textbf{district fixed-effects panels} and \textbf{lagged / dynamic models}, so a lever at time $t$ predicts an outcome at $t{+}1$; and (iii) \textbf{event-study designs} around the timing of district-level policy rollouts.
+\paragraph{Stronger identification.} Where assignment is plausibly as-good-as-random, \textbf{instrumental variables} and \textbf{regression-discontinuity} (around programme-eligibility thresholds) would sharpen causal claims, and \textbf{synthetic control} would estimate a district's counterfactual trajectory after a specific intervention.
+\paragraph{Causal forecasting.} A temporal panel lets us move from explanation to \emph{prediction}: Bayesian structural time-series / causal-impact models to forecast district outcomes and the \emph{counterfactual} effect of a planned facility, plus demand forecasting so a planner sees where need is \emph{growing}, not only where it is today.
+\paragraph{Connectivity and deployment.} Beyond today's Google-Maps / share last-mile and multimodal photo intake: \textbf{Lakebase (Postgres + pgvector)} for sub-10\,ms reads and exact-passage citations; \textbf{health-system interoperability} via FHIR so referrals flow into clinical systems; \textbf{real-time gold refresh} as new data arrives; \textbf{bring-your-own-data} so any NGO ingests its own export; \textbf{low-connectivity delivery} (SMS / offline-first) for field use; and extending multimodal intake from \emph{routing} to \emph{extraction}---reading capabilities off a facility board and structuring prescriptions and imaging through the same Model-Serving endpoint.
 
 \section{Conclusion}
 facilitiesHelp.io turns $10{,}088$ messy records into decisions a non-technical planner can trust, across all four challenge tracks plus two bonus tracks. The technical core is honesty: grade on cited evidence, communicate uncertainty, separate a real care gap from missing data, and distinguish a correlation from a cause. The hardest part of ``for good'' data work is not prediction---it is telling the user what the data can and cannot support.
@@ -305,6 +311,31 @@ facilitiesHelp.io turns $10{,}088$ messy records into decisions a non-technical 
 \end{thebibliography}
 
 \appendix
+\section{Glossary of methods (plain language)}
+\small
+\begin{tabular}{ll}
+\toprule
+Term & What it does for us\\
+\midrule
+Pearson $r$ & how tightly two things move together ($-1$ to $+1$); a hint, not a cause\\
+PC algorithm & learns the graph of \emph{which variable could affect which} from the data\\
+OLS $+$ fixed effects & estimates an effect while holding wealth and state constant\\
+Double-ML & uses ML to strip out confounders, then reads the clean effect; robust to non-linear noise\\
+PSM (propensity matching) & pairs similar ``treated'' vs ``control'' districts --- the observational stand-in for an A/B test\\
+E-value & how strong an unknown confounder would need to be to overturn a result (bigger $=$ safer)\\
+GAM & fits curved, non-linear dose--response instead of straight lines\\
+Quantile regression & looks at the worst-off districts (the tails), not just the average\\
+Multilevel model & stabilises noisy small-sample districts by borrowing strength across the group\\
+Stability selection & keeps only predictors that survive repeated resampling (avoids flukes)\\
+GNN (graph neural net) & geometric deep learning that learns from geography --- neighbours inform each other\\
+Moran's $I$ & checks whether nearby districts look alike (spatial clustering); a diagnostic\\
+ROC-AUC & how well a model separates classes; $1.0$ perfect, $0.5$ coin-flip\\
+SHAP & shows how much each signal contributed to one prediction\\
+2SFCA & accessibility score: reachable supply within a travel radius (roadmap)\\
+DiD (difference-in-differences) & compares the \emph{change} in treated vs untreated districts over time (roadmap)\\
+\bottomrule
+\end{tabular}
+
 \section{Data dictionary (gold tables)}
 \small
 \begin{tabular}{ll}
