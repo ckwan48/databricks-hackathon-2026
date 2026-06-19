@@ -16,7 +16,7 @@ flowchart TD
 
     subgraph P ["1 . Probability and Trust — how sure are we?"]
         direction TB
-        P1["Evidence grading<br/>STRONG / PARTIAL / WEAK"]:::prob
+        P1["Evidence grading<br/>STRONG · PARTIAL ·<br/>WEAK · CLAIMED"]:::prob
         P2["Confidence 0-100<br/>more sources = higher"]:::prob
         P3["Validation<br/>logistic regression, ROC-AUC"]:::prob
         P4["Attribution<br/>SHAP-style"]:::prob
@@ -72,7 +72,7 @@ flowchart TD
 
 | Pillar | The question it answers | What we actually run |
 |---|---|---|
-| **1 · Probability & Trust** | *How sure are we a claim is real?* | A deterministic grading rubric turns the facility's own text into STRONG / PARTIAL / WEAK with a 0–100 confidence; a logistic model proves the grade is reproducible, and a metadata-only model (AUC ≈ 0.57) proves it isn't just hospital fame. |
+| **1 · Probability & Trust** | *How sure are we a claim is real?* | A deterministic grading rubric turns the facility's own text into STRONG / PARTIAL / WEAK-SUSPICIOUS / CLAIMED with a 0–100 confidence; a logistic model proves the grade is reproducible, and a metadata-only model (AUC ≈ 0.57) proves it isn't just hospital fame. |
 | **2 · Correlation** | *What moves together across districts?* | Pearson **r** (−1 to +1) over 706 districts, shown as an interactive heatmap. A strong correlation is a hint, **not** a cause. |
 | **3 · Causation** | *Is it a real lever or a coincidence?* | The causal ladder: **PC** structure-learning builds the DAG → **OLS + state fixed-effects** → **Double Machine Learning** → **propensity-score matching** → **E-value** robustness. Effects that collapse under adjustment (sanitation→stunting) were confounded; ones that survive (schooling→child-marriage) are likely causal. |
 | **4 · ML & Deep Learning** | *Non-linear, small-sample, and spatial patterns* | GAM + quantile regression (dose–response & tails), multilevel/hierarchical shrinkage, stability selection, and a **spatial Graph Neural Network** (geometric deep learning) benchmarked against baselines. |

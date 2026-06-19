@@ -24,12 +24,12 @@ Every number in the app is **computed live from the complete dataset — no samp
 |---|---|
 | **① Facility Trust Desk** | *Can this facility actually do what it claims?* Grades **every specialty a facility lists** (2,580 in the data) as **STRONG / PARTIAL / WEAK-SUSPICIOUS / CLAIMED**, with a 0–100 confidence, the **ground-truth signals**, the **cited source text + links**, a **SHAP-style evidence attribution**, an evidence→verdict DAG, on-demand step-by-step reasoning, and a **human override saved to an audit log**. |
 | **② Medical Desert Planner** | *Where are the real care gaps, and how confident are we?* Trust-weighted district aggregation for **all 2,518 capabilities** that separates a **real care gap** from **data-poor**, with a facilities table (capacity · doctors · equipment), an interactive map, and a causal layer answering *"will building more facilities actually fix this?"* |
-| **③ Referral Copilot** | *Where should a patient go?* "dialysis near Guntur" → geocodes **any** Indian city/district (from 165k post offices), returns an **evidence-attached, distance-ranked** shortlist with the same per-facility "why" depth. Plus a **"You may also need"** suggestion (facility co-occurrence P(B\|A)) and a **Care pathway** that turns a *health concern* into the right specialist near you — then flags **causally-related care as a "maybe"** using NFHS district correlations (e.g. child stunting travels with child anaemia, r = 0.33; wasting, r = 0.25), with a *correlation ≠ diagnosis* caveat. |
+| **③ Referral Copilot** | *Where should a patient go?* A patient can **describe a symptom in plain words** ("left foot hurting" → Orthopedics), **upload a photo** of the condition (read by **Llama 4 Maverick vision**), or pick any specialty. "dialysis near Guntur" → geocodes **any** Indian city/district (from 165k post offices) and returns an **evidence-attached, distance-ranked** shortlist, each with a Google Maps **Directions** link. Plus a **"You may also need"** suggestion (facility co-occurrence P(B\|A)) and a **Care pathway** that turns a *health concern* into the right specialist near you — flagging **causally-related care as a "maybe"** from NFHS correlations (child stunting travels with child anaemia, r = 0.33; wasting, r = 0.25), with a *correlation ≠ diagnosis* caveat. |
 | **④ Data Readiness Desk** | *What to fix before planning?* Surfaces impossible values, contradictions, capacity-without-doctors, and column-misaligned rows — ranked by review leverage. |
-| **⑤ Ask the Data · Genie** | Native **Databricks AI/BI Genie** — natural-language → SQL over the gold tables, grounded in the trust rubric. |
+| **⑤ Ask the Data · Genie** | Native **Databricks AI/BI Genie** — natural-language → SQL over the gold tables, grounded in the trust rubric — with **answers in 11 languages** (Llama 4 Maverick translate agent) and a **🔊 Listen** read-aloud. |
 | **⑥ Data Science Lab** | Interactive EDA across **all three datasets** — correlation explorer, confounding scatter, any-specialty grade explorer, geographic coverage, and the **causal + ML experiments** that power the engine. |
 
-Plus a grounded **Copilot** (Llama 4 Maverick) that answers cross-track questions, **cites the numbers, states confidence, and renders the relevant chart.**
+Plus a grounded **Copilot** (Llama 4 Maverick) that answers cross-track questions, **cites the numbers, states confidence, and renders the relevant chart** — and the **same Model Serving endpoint powers multimodal vision** (reads an uploaded photo) **and 11-language answers**.
 
 ## The trust engine — how a grade is assigned
 
@@ -123,7 +123,7 @@ flowchart TD
 | **Governance & storage** | Unity Catalog · **Delta Lake** (bronze → silver → gold medallion) |
 | **Compute** | Serverless **SQL Warehouse** |
 | **App** | **Databricks Apps** · Streamlit |
-| **LLM & agents** | **Model Serving — Llama 4 Maverick** (3 agents + grounded copilot + translator) |
+| **LLM & agents** | **Model Serving — Llama 4 Maverick** — 3 text agents + grounded copilot + 11-language translate agent + **multimodal vision** (one endpoint for text *and* images) |
 | **Natural language → SQL** | **Databricks AI/BI Genie** |
 | **Persistence** | Delta (`app_user_actions`) · **Lakebase**-ready (Postgres + pgvector) |
 | **Dev tooling** | **Databricks agent skills** (`databricks aitools`) · Databricks CLI |
@@ -133,7 +133,7 @@ flowchart TD
 | **Deep learning** | spatial **Graph Neural Network** (geometric DL) |
 | **Visualization** | Plotly · **inlined d3.js** (interactive, draggable force-directed causal graphs) |
 | **Geospatial** | India-Post geocoding (any district) · haversine distance |
-| **Last-mile UX** | Google Maps · `tel:` call · WhatsApp · `mailto:` share · **multilingual answers** (translate agent) · browser **text-to-speech** |
+| **Patient access & UX** | **symptom mapper** (plain words → specialty) · **multimodal photo upload** (Llama 4 Maverick vision) · Google Maps **Directions** · **11-language answers** (translate agent) · **🔊 Listen** (browser text-to-speech) |
 
 > Full method walkthrough in [`docs/TECHNIQUES.md`](docs/TECHNIQUES.md) · how we used each Databricks capability in [`docs/DATABRICKS_USAGE.md`](docs/DATABRICKS_USAGE.md) · research write-up in [`paper/facilitiesHelp.tex`](paper/facilitiesHelp.tex).
 

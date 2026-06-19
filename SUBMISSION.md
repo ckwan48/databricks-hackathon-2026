@@ -8,11 +8,11 @@ A planner or NGO coordinator is handed **10,000 messy, scraped healthcare-facili
 Four tracks for a non-technical planner — **every answer carries its evidence and its uncertainty**:
 
 1. **Facility Trust Desk** — grades every facility × capability (ICU, maternity, oncology, NICU, emergency, trauma, dialysis) **from the facility's own text** as Strong / Partial / Weak-Suspicious, with a **0–100 confidence meter**, the **cited source text + links**, step-by-step AI reasoning on demand, and an optional **human override saved to an audit log** (the model grade is never overwritten).
-2. **Medical Desert Planner** — aggregates trust-weighted evidence to district level and **distinguishes a real care gap (facilities exist but little trustworthy capability) from data-poor (too few records to judge)** — **247 real gaps** surfaced. Plus an **interactive causal graph** from a 706-district NFHS analysis showing which health levers are *real causes* vs *confounded coincidences*.
+2. **Medical Desert Planner** — aggregates trust-weighted evidence to district level and **distinguishes a real care gap (facilities exist but little trustworthy capability) from data-poor (too few records to judge)** — **4,675 apparent care gaps** surfaced (vs 24,824 data-poor). Plus an **interactive causal graph** from a 706-district NFHS analysis showing which health levers are *real causes* vs *confounded coincidences*.
 3. **Referral Copilot** — "dialysis near Jaipur" → an **evidence-attached, distance-ranked shortlist** on an interactive map.
 4. **Data Readiness Desk** — surfaces contradictions, impossible values and sparse fields, ranked by **leverage** for human review.
 
-Plus **example questions (Easy → Difficult) per track** and a grounded **Copilot chat** that answers any question with citations.
+Plus two bonus tracks (**Ask the Data · Genie**, **Data Science Lab**), a **symptom mapper** + **multimodal photo upload** (Llama 4 Maverick vision → specialty) in Referral, **answers in 11 languages** with a **🔊 Listen** read-aloud, and a grounded **Copilot** that answers any question with citations.
 
 ## How we built it (all Databricks, Free Edition)
 - **Data:** the Virtue Foundation Marketplace dataset (Unity Catalog) + India Post PIN directory + NFHS-5 district indicators.
@@ -28,8 +28,8 @@ Plus **example questions (Easy → Difficult) per track** and a grounded **Copil
 - Calibrating *real gap vs data-poor* so the desert story is honest, not alarmist.
 
 ## Accomplishments we're proud of
-- **24,843** evidence-graded capability claims; **~10,000 high-confidence**.
-- **247 real care gaps** rigorously distinguished from data-poor regions.
+- **117,993** evidence-graded claims across **2,580 specialties** — complete coverage, no sampling.
+- **4,675 apparent care gaps** rigorously distinguished from data-poor regions (24,824 data-poor; 8,674 evidenced supply).
 - An **interactive causal graph that changes per capability** — depth almost no team will have.
 - A **fully Databricks-native, live app on Free Edition**, with every claim cited.
 
